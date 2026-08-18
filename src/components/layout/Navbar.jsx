@@ -32,9 +32,9 @@ export const Navbar = ({ onToggleSidebar }) => {
         </button>
 
         <Link 
-          to={user ? '/dashboard' : '/landing'} 
+          to={user && !isDemo ? '/dashboard' : '/landing'} 
           className="flex items-center gap-2 group cursor-pointer hover:opacity-90 transition-opacity"
-          title={user ? 'Ir a Dashboard General' : 'Ir a Landing Page'}
+          title={user && !isDemo ? 'Ir a Dashboard General' : 'Ir a Landing Page'}
         >
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-base shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform">
             L

@@ -122,7 +122,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
           <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px] space-y-1.5">
             <div className="flex items-center gap-2 text-slate-300 font-semibold">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Firmware ESP32</span>
+              <span>Firmware actualizado</span>
             </div>
             <div className="text-slate-400 text-[10px] font-mono">LIMPIEZIOT OS v2.0.0</div>
             <div className="text-slate-400 text-[10px]">Supabase RLS Protection</div>
