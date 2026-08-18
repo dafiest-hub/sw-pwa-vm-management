@@ -32,8 +32,8 @@ export const Landing = () => {
 
       {/* Header Landing */}
       <header className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between relative z-20 border-b border-slate-800/60">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-brand-500/25">
+        <Link to={user ? '/dashboard' : '/landing'} className="flex items-center gap-3 group cursor-pointer">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform">
             L
           </div>
           <div>
@@ -45,7 +45,7 @@ export const Landing = () => {
             </span>
             <span className="text-[11px] text-slate-400 hidden sm:block">Plataforma Inteligente para tu Negocio de Vending</span>
           </div>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-3">
           {user ? (

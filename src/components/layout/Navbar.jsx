@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LogOut, User, Shield, Menu, Wifi, Sparkles } from 'lucide-react';
 
@@ -30,8 +31,12 @@ export const Navbar = ({ onToggleSidebar }) => {
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-base shadow-lg shadow-brand-500/20">
+        <Link 
+          to={user ? '/dashboard' : '/landing'} 
+          className="flex items-center gap-2 group cursor-pointer hover:opacity-90 transition-opacity"
+          title={user ? 'Ir a Dashboard General' : 'Ir a Landing Page'}
+        >
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-base shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform">
             L
           </div>
           <div>
@@ -43,7 +48,7 @@ export const Navbar = ({ onToggleSidebar }) => {
             </h1>
             <p className="text-[10px] text-slate-400 font-medium hidden sm:block">Control & Telemetría en Tiempo Real</p>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Acciones de usuario y estado demo */}

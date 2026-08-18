@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getMachines, createMachine } from '../services/machineService';
-import { Cpu, MapPin, Search, ArrowRight, Layers, Plus, X, CheckCircle2 } from 'lucide-react';
+import { Cpu, MapPin, Search, ArrowRight, Layers, Plus, X, CheckCircle2, Compass } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -80,6 +80,14 @@ export const Machines = () => {
 
   return (
     <div className="space-y-6">
+      {/* Guía de Ubicación de Menú Actual */}
+      <div className="flex items-center gap-2">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-300 text-xs font-bold shadow-sm">
+          <Compass className="w-4 h-4 text-brand-400" />
+          <span>Menú Actual: <strong className="text-white">Red de Máquinas Vending</strong></span>
+        </div>
+      </div>
+
       {/* Header & Botón Registrar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
