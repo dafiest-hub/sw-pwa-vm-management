@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const Landing = () => {
-  const { switchDemoRole, user } = useAuth();
+  const { switchDemoRole, user, isDemo } = useAuth();
   const navigate = useNavigate();
 
   const handleDemoAccess = (role = 'admin') => {
