@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, Mail, Lock, LogIn, Sparkles, Cpu } from 'lucide-react';
 
 export const Login = () => {
-  const { loginWithGoogle, loginWithEmail, isDemo, switchDemoRole } = useAuth();
+  const { loginWithGoogle, loginWithEmail, isDemo, switchDemoRole, user } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
@@ -15,6 +21,7 @@ export const Login = () => {
     setSubmitting(true);
     try {
       await loginWithEmail(email, password);
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión. Revisa tus credenciales.');
     } finally {
