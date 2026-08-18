@@ -2,33 +2,37 @@ import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { sampleMachines, sampleMachineStatus, sampleTanks } from '../mock/sampleData';
 
 export const getMachines = async (assignedIds = null) => {
-  let list = [];
   if (isSupabaseConfigured && supabase) {
-    let query = supabase
-      .from('machines')
-      .select(`
-        *,
-        machine_status (*)
-      `)
-      .order('created_at', { ascending: false });
+    try {
+      let query = supabase
+        .from('machines')
+        .select(`
+          *,
+          machine_status (*)
+        `);
 
-    if (assignedIds && Array.isArray(assignedIds)) {
-      query = query.in('id', assignedIds);
+      if (assignedIds && Array.isArray(assignedIds) && assignedIds.length > 0) {
+        query = query.in('id', assignedIds);
+      }
+
+      const { data: machines, error } = await query;
+
+      if (error) {
+        console.error('Error al cargar máquinas de Supabase:', error.message);
+      } else if (machines) {
+        return machines.map(m => ({
+          ...m,
+          machine_status: Array.isArray(m.machine_status) ? (m.machine_status[0] || null) : m.machine_status
+        }));
+      }
+    } catch (err) {
+      console.error('Error inesperado al obtener máquinas de Supabase:', err);
     }
-
-    const { data: machines, error } = await query;
-
-    if (error) {
-      console.warn('Error al cargar máquinas de Supabase, usando datos de respaldo:', error.message);
-      list = mergeMockMachinesWithStatus();
-    } else {
-      list = machines;
-    }
-  } else {
-    list = mergeMockMachinesWithStatus();
   }
 
-  if (assignedIds && Array.isArray(assignedIds)) {
+  // Fallback Mock (solo cuando Supabase no esté configurado o no devuelva datos)
+  const list = mergeMockMachinesWithStatus();
+  if (assignedIds && Array.isArray(assignedIds) && assignedIds.length > 0) {
     return list.filter(m => assignedIds.includes(m.id));
   }
   return list;
@@ -43,10 +47,9 @@ export const getMachineById = async (id) => {
         machine_status (*)
       `)
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (!error && machine) {
-      // Obtener tanques de la máquina
       const { data: tanks } = await supabase
         .from('machine_tanks')
         .select(`
@@ -56,7 +59,9 @@ export const getMachineById = async (id) => {
         .eq('machine_id', id)
         .order('tank_number', { ascending: true });
 
-      return { ...machine, tanks: tanks || [] };
+      const normStatus = Array.isArray(machine.machine_status) ? (machine.machine_status[0] || null) : machine.machine_status;
+
+      return { ...machine, machine_status: normStatus, tanks: tanks || [] };
     }
   }
 
