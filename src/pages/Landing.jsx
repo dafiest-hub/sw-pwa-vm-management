@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const Landing = () => {
-  const { switchDemoRole, user, isDemo } = useAuth();
+  const { switchDemoRole, user, isDemo, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleDemoAccess = (role = 'admin') => {
@@ -32,7 +32,7 @@ export const Landing = () => {
 
       {/* Header Landing */}
       <header className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between relative z-20 border-b border-slate-800/60">
-        <Link to={user && !isDemo ? '/dashboard' : '/landing'} className="flex items-center gap-3 group cursor-pointer">
+        <Link to="/landing" onClick={logout} className="flex items-center gap-3 group cursor-pointer">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform">
             L
           </div>

@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LogOut, User, Shield, Menu, Wifi, Sparkles } from 'lucide-react';
 
 export const Navbar = ({ onToggleSidebar }) => {
   const { user, profile, role, logout, isDemo, switchDemoRole } = useAuth();
+  const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  const handleLogoClick = async () => {
+    await logout();
+    navigate('/landing');
+  };
 
   const getRoleBadge = (r) => {
     switch (r) {
@@ -31,10 +37,10 @@ export const Navbar = ({ onToggleSidebar }) => {
           <Menu className="w-5 h-5" />
         </button>
 
-        <Link 
-          to={user && !isDemo ? '/dashboard' : '/landing'} 
-          className="flex items-center gap-2 group cursor-pointer hover:opacity-90 transition-opacity"
-          title={user && !isDemo ? 'Ir a Dashboard General' : 'Ir a Landing Page'}
+        <button 
+          onClick={handleLogoClick}
+          className="flex items-center gap-2 group cursor-pointer hover:opacity-90 transition-opacity text-left bg-transparent border-0 p-0"
+          title="Ir a la página principal (cerrar sesión)"
         >
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-base shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform">
             L
@@ -48,7 +54,7 @@ export const Navbar = ({ onToggleSidebar }) => {
             </h1>
             <p className="text-[10px] text-slate-400 font-medium hidden sm:block">Control & Telemetría en Tiempo Real</p>
           </div>
-        </Link>
+        </button>
       </div>
 
       {/* Acciones de usuario y estado demo */}
