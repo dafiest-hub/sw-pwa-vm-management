@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Logo } from '../components/common/Logo';
 import { 
   ShieldCheck, 
   TrendingUp, 
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const Landing = () => {
-  const { switchDemoRole, user, isDemo, logout } = useAuth();
+  const { switchDemoRole, user, isDemo } = useAuth();
   const navigate = useNavigate();
 
   const handleDemoAccess = (role = 'admin') => {
@@ -32,18 +33,16 @@ export const Landing = () => {
 
       {/* Header Landing */}
       <header className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between relative z-20 border-b border-slate-800/60">
-        <Link to="/landing" onClick={logout} className="flex items-center gap-3 group cursor-pointer">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform">
-            L
-          </div>
-          <div>
-            <span className="font-extrabold text-white text-lg tracking-tight flex items-center gap-2">
-              LIMPIEZIOT Vending
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-bold uppercase">
-                Plataforma de Control
-              </span>
+        {/* El logo ya no cierra la sesión: sólo lleva al inicio. */}
+        <Link to="/landing" className="flex items-center gap-3 group cursor-pointer">
+          <Logo size="lg" />
+          <div className="hidden sm:block">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent-soft border border-accent/20 font-bold uppercase">
+              Plataforma de control
             </span>
-            <span className="text-[11px] text-slate-400 hidden sm:block">Plataforma Inteligente para tu Negocio de Vending</span>
+            <span className="block text-[11px] text-content-muted mt-1">
+              Monitoreo de máquinas expendedoras en tiempo real
+            </span>
           </div>
         </Link>
 

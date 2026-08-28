@@ -1,6 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="#0369a1">
-  <rect width="512" height="512" rx="100" fill="#0f172a"/>
-  <path d="M160 120h192v272H160z" fill="none" stroke="#38bdf8" stroke-width="24" rx="20"/>
-  <path d="M200 180h112v80H200z" fill="#0369a1" stroke="#38bdf8" stroke-width="12" rx="10"/>
-  <circle cx="256" cy="330" r="24" fill="#38bdf8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Safari pinned tab: sólo respeta la silueta, debe ser monocromo. -->
+  <path fill="black" d="M256 96c-97 0-176 54-176 120s79 120 176 120 176-54 176-120S353 96 256 96zm0 40c78 0 136 39 136 80s-58 80-136 80-136-39-136-80 58-80 136-80z"/>
+  <path fill="black" d="M120 128l14 34 34 14-34 14-14 34-14-34-34-14 34-14z"/>
+  <path fill="black" d="M176 96l9 22 22 9-22 9-9 22-9-22-22-9 22-9z"/>
+  <path fill="black" d="M372 88c8-6 18-4 20 4 1 6-2 12-6 20l-56 128c-4 10-10 16-18 16-7 0-11-6-8-15l58-133c4-9 6-16 10-20z"/>
 </svg>

@@ -1,29 +1,11 @@
 import React from 'react';
 import { Droplet, AlertTriangle, ZapOff, RefreshCw } from 'lucide-react';
+import { productChipClass, liquidGradientClass } from '../../lib/tankColors';
 
 export const TankLevelGauge = ({ tank, onRefillClick, onPriceEditClick, isTechnician }) => {
   const percentage = Math.min(100, Math.max(0, Number(tank.current_percentage || ((tank.current_liters / tank.capacity_liters) * 100).toFixed(1))));
   const isLow = !tank.is_above_minimum || percentage < 20;
   const isPumpOk = tank.is_pump_working !== false;
-
-  // Asignación dinámica de color según tipo de producto
-  const getProductColor = (sku = '') => {
-    if (sku.includes('DET')) return 'bg-cyan-500 text-cyan-200 border-cyan-400';
-    if (sku.includes('SUA')) return 'bg-pink-500 text-pink-200 border-pink-400';
-    if (sku.includes('CLO')) return 'bg-amber-400 text-amber-900 border-amber-300';
-    if (sku.includes('PINO')) return 'bg-emerald-500 text-emerald-100 border-emerald-400';
-    if (sku.includes('DES')) return 'bg-orange-500 text-orange-100 border-orange-400';
-    return 'bg-brand-500 text-brand-100 border-brand-400';
-  };
-
-  const getLiquidBg = (sku = '') => {
-    if (sku.includes('DET')) return 'from-cyan-600 to-cyan-400';
-    if (sku.includes('SUA')) return 'from-pink-600 to-pink-400';
-    if (sku.includes('CLO')) return 'from-amber-500 to-amber-300';
-    if (sku.includes('PINO')) return 'from-emerald-600 to-emerald-400';
-    if (sku.includes('DES')) return 'from-orange-600 to-orange-400';
-    return 'from-brand-600 to-brand-400';
-  };
 
   return (
     <div className={`p-4 rounded-2xl bg-slate-900/80 border transition-all duration-300 ${
@@ -35,7 +17,7 @@ export const TankLevelGauge = ({ tank, onRefillClick, onPriceEditClick, isTechni
           <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs font-bold border border-slate-700">
             Tanque #{tank.tank_number}
           </span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getProductColor(tank.product?.sku)}`}>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${productChipClass(tank.product?.sku)}`}>
             {tank.product?.sku || 'S/N'}
           </span>
         </div>
@@ -75,7 +57,7 @@ export const TankLevelGauge = ({ tank, onRefillClick, onPriceEditClick, isTechni
 
           {/* Columna de Líquido animada */}
           <div 
-            className={`w-full bg-gradient-to-t ${getLiquidBg(tank.product?.sku)} rounded-b-lg transition-all duration-700 ease-out relative`}
+            className={`w-full bg-gradient-to-t ${liquidGradientClass(tank.product?.sku)} rounded-b-lg transition-all duration-700 ease-out relative`}
             style={{ height: `${percentage}%` }}
           >
             {/* Efecto superficie de líquido */}

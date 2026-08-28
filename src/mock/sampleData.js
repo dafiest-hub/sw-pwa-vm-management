@@ -1,470 +1,170 @@
-// Datos de muestra basados rigurosamente en la base de datos de Supabase
-// (supabase_db_design.md) para funcionamiento en modo offline / fallback
+/**
+ * Datos de demostración (Demo Mode).
+ *
+ * Reflejan el esquema REAL de Supabase (supabase_db_design.md), incluidos los
+ * casos borde del enlace venta-ingreso por (machine_id, tx_id): pago mixto,
+ * doble ingreso del mismo tipo, venta fallida sin cobro, venta legacy con
+ * tx_id NULL, ingreso huérfano y venta concretada sin ingreso.
+ *
+ * Los servicios mutan estos arrays (push/unshift); ese contrato se mantiene.
+ */
 
+const M1 = 'm1111111-1111-1111-1111-111111111111';
+const M2 = 'm2222222-2222-2222-2222-222222222222';
+const M3 = 'm3333333-3333-3333-3333-333333333333';
+
+// Catálogo alineado con producción (SKU reales del alta de VM96E1A4)
 export const sampleProducts = [
-  {
-    id: 'p1111111-1111-1111-1111-111111111111',
-    sku: 'DET-LIG-001',
-    name: 'Detergente Líquido Ropa Concentrado',
-    description: 'Detergente de alto rendimiento para ropa blanca y de color con aroma fresco',
-    default_price_per_liter: 25.00,
-    density_kg_m3: 1040.00,
-    created_at: '2026-08-01T10:00:00Z'
-  },
-  {
-    id: 'p2222222-2222-2222-2222-222222222222',
-    sku: 'SUA-FLOR-002',
-    name: 'Suavizante de Telas Caricia Floral',
-    description: 'Suavizante con microcápsulas de fragancia duradera',
-    default_price_per_liter: 22.00,
-    density_kg_m3: 1010.00,
-    created_at: '2026-08-01T10:00:00Z'
-  },
-  {
-    id: 'p3333333-3333-3333-3333-333333333333',
-    sku: 'CLO-CONC-003',
-    name: 'Cloro Blanqueador 6%',
-    description: 'Solución desinfectante de hipoclorito de sodio al 6%',
-    default_price_per_liter: 15.00,
-    density_kg_m3: 1080.00,
-    created_at: '2026-08-01T10:00:00Z'
-  },
-  {
-    id: 'p4444444-4444-4444-4444-444444444444',
-    sku: 'LIM-PINO-004',
-    name: 'Limpiador Multiusos Aceite de Pino',
-    description: 'Limpiador de pisos y superficies con aroma natural a pino',
-    default_price_per_liter: 18.00,
-    density_kg_m3: 1005.00,
-    created_at: '2026-08-01T10:00:00Z'
-  },
-  {
-    id: 'p5555555-5555-5555-5555-555555555555',
-    sku: 'DES-CITR-005',
-    name: 'Desengrasante Biodegradable Cítrico',
-    description: 'Formulación de alta efectividad para grasa pesada en cocina',
-    default_price_per_liter: 30.00,
-    density_kg_m3: 1025.00,
-    created_at: '2026-08-01T10:00:00Z'
-  },
-  {
-    id: 'p6666666-6666-6666-6666-666666666666',
-    sku: 'JAB-MANO-006',
-    name: 'Jabón Líquido Manos Humectante',
-    description: 'Jabón para manos con aloe vera y glicerina',
-    default_price_per_liter: 28.00,
-    density_kg_m3: 1030.00,
-    created_at: '2026-08-01T10:00:00Z'
-  },
-  {
-    id: 'p7777777-7777-7777-7777-777777777777',
-    sku: 'LIM-VIDR-007',
-    name: 'Limpiador de Vidrios y Cristales',
-    description: 'Fórmula antiestática de secado rápido sin manchas',
-    default_price_per_liter: 20.00,
-    density_kg_m3: 998.00,
-    created_at: '2026-08-01T10:00:00Z'
-  },
-  {
-    id: 'p8888888-8888-8888-8888-888888888888',
-    sku: 'DES-QUAT-008',
-    name: 'Desinfectante Cuaternario de 5ta Gen',
-    description: 'Desinfectante virucida y bactericida sin enjuague',
-    default_price_per_liter: 35.00,
-    density_kg_m3: 1015.00,
-    created_at: '2026-08-01T10:00:00Z'
-  }
+  { id: 'p1111111-1111-1111-1111-111111111111', sku: 'JAB-MANOS', name: 'Jabón para Manos', description: 'Jabón líquido neutro con glicerina para dispensadores.', default_price_per_liter: 15.0, density_kg_m3: 1016.0, created_at: '2026-07-01T10:00:00Z' },
+  { id: 'p2222222-2222-2222-2222-222222222222', sku: 'LIMP-MULTI', name: 'Limpiador Multiusos', description: 'Limpiador de superficies de uso general, aroma cítrico.', default_price_per_liter: 10.0, density_kg_m3: 995.0, created_at: '2026-07-01T10:05:00Z' },
+  { id: 'p3333333-3333-3333-3333-333333333333', sku: 'CLORO', name: 'Cloro', description: 'Hipoclorito de sodio al 6 % para desinfección.', default_price_per_liter: 7.0, density_kg_m3: 1075.0, created_at: '2026-07-01T10:10:00Z' },
+  { id: 'p4444444-4444-4444-4444-444444444444', sku: 'DESENGRA', name: 'Desengrasante', description: 'Desengrasante industrial concentrado para cocina.', default_price_per_liter: 20.0, density_kg_m3: 1023.0, created_at: '2026-07-01T10:15:00Z' },
+  { id: 'p5555555-5555-5555-5555-555555555555', sku: 'SUAVIZANTE', name: 'Suavizante de Telas', description: 'Suavizante concentrado de larga duración.', default_price_per_liter: 14.0, density_kg_m3: 1000.0, created_at: '2026-07-01T10:20:00Z' },
+  { id: 'p6666666-6666-6666-6666-666666666666', sku: 'DET-MANCHAS', name: 'Detergente Quita-Manchas', description: 'Detergente líquido con enzimas quitamanchas.', default_price_per_liter: 14.0, density_kg_m3: 1000.0, created_at: '2026-07-01T10:25:00Z' },
+  { id: 'p7777777-7777-7777-7777-777777777777', sku: 'DET-COLOR', name: 'Detergente Pro-Color', description: 'Detergente para ropa de color, protege la intensidad.', default_price_per_liter: 13.0, density_kg_m3: 1040.0, created_at: '2026-07-01T10:30:00Z' },
+  { id: 'p8888888-8888-8888-8888-888888888888', sku: 'DET-TRASTES', name: 'Detergente para Trastes', description: 'Lavavajillas líquido concentrado, alto poder desengrasante.', default_price_per_liter: 14.0, density_kg_m3: 1030.0, created_at: '2026-07-01T10:35:00Z' },
 ];
 
+const bySku = (sku) => sampleProducts.find((p) => p.sku === sku);
+
 export const sampleMachines = [
-  {
-    id: 'm1111111-1111-1111-1111-111111111111',
-    device_id: 'esp32_vending_01',
-    name: 'Expendedora Central Plaza Tec',
-    location_address: 'Av. Tecnológico #4500, Modulo de Lavanderías, Col. Centro',
-    latitude: 20.6736,
-    longitude: -103.3440,
-    status: 'online',
-    firmware_version: '2.0.0',
-    created_at: '2026-08-01T08:00:00Z',
-    updated_at: '2026-08-06T19:30:00Z'
-  },
-  {
-    id: 'm2222222-2222-2222-2222-222222222222',
-    device_id: 'esp32_vending_02',
-    name: 'Expendedora Residencial Las Palmas',
-    location_address: 'Calle Palmas #12, Frente a Administración',
-    latitude: 20.6800,
-    longitude: -103.3500,
-    status: 'online',
-    firmware_version: '2.0.0',
-    created_at: '2026-08-02T09:00:00Z',
-    updated_at: '2026-08-06T19:28:00Z'
-  },
-  {
-    id: 'm3333333-3333-3333-3333-333333333333',
-    device_id: 'esp32_vending_03',
-    name: 'Expendedora Universidad Campus Sur',
-    location_address: 'Edificio E, Cafetería General',
-    latitude: 20.6500,
-    longitude: -103.3300,
-    status: 'maintenance',
-    firmware_version: '1.9.4',
-    created_at: '2026-08-03T11:00:00Z',
-    updated_at: '2026-08-06T18:15:00Z'
-  }
+  { id: M1, device_id: 'VM96E1A4', name: 'Expendedora Central Plaza Tec', location_address: 'Av. Tecnológico 4500, Módulo de Lavanderías, Col. Centro', latitude: 20.6736, longitude: -103.344, status: 'online', firmware_version: '2.1.0', created_at: '2026-08-01T08:00:00Z', updated_at: '2026-08-27T09:30:00Z' },
+  { id: M2, device_id: 'VM4C2B77', name: 'Expendedora Residencial Las Palmas', location_address: 'Calle Palmas 12, frente a Administración', latitude: 20.68, longitude: -103.35, status: 'online', firmware_version: '2.1.0', created_at: '2026-08-02T09:00:00Z', updated_at: '2026-08-27T09:28:00Z' },
+  { id: M3, device_id: 'VM7D3E19', name: 'Expendedora Universidad Campus Sur', location_address: 'Edificio E, Cafetería General', latitude: 20.65, longitude: -103.33, status: 'maintenance', firmware_version: '2.0.0', created_at: '2026-08-03T11:00:00Z', updated_at: '2026-08-26T18:15:00Z' },
 ];
 
 export const sampleMachineStatus = [
-  {
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    available_balance: 5.00,
-    stored_cash_balance: 845.00,
-    door_open: false,
-    coinbox_tampered: false,
-    tilt_detected: false,
-    last_keepalive_at: '2026-08-06T19:31:00Z',
-    updated_at: '2026-08-06T19:31:00Z'
-  },
-  {
-    machine_id: 'm2222222-2222-2222-2222-222222222222',
-    available_balance: 0.00,
-    stored_cash_balance: 1420.00,
-    door_open: false,
-    coinbox_tampered: false,
-    tilt_detected: false,
-    last_keepalive_at: '2026-08-06T19:29:00Z',
-    updated_at: '2026-08-06T19:29:00Z'
-  },
-  {
-    machine_id: 'm3333333-3333-3333-3333-333333333333',
-    available_balance: 10.00,
-    stored_cash_balance: 320.00,
-    door_open: true,
-    coinbox_tampered: false,
-    tilt_detected: false,
-    last_keepalive_at: '2026-08-06T18:15:00Z',
-    updated_at: '2026-08-06T18:15:00Z'
-  }
+  { machine_id: M1, available_balance: 12.5, stored_cash_balance: 1284.0, door_open: false, coinbox_tampered: false, tilt_detected: false, last_keepalive_at: '2026-08-27T09:30:00Z', updated_at: '2026-08-27T09:30:00Z' },
+  { machine_id: M2, available_balance: 0.0, stored_cash_balance: 736.5, door_open: false, coinbox_tampered: false, tilt_detected: false, last_keepalive_at: '2026-08-27T09:28:00Z', updated_at: '2026-08-27T09:28:00Z' },
+  { machine_id: M3, available_balance: 0.0, stored_cash_balance: 402.0, door_open: true, coinbox_tampered: false, tilt_detected: true, last_keepalive_at: '2026-08-26T18:15:00Z', updated_at: '2026-08-26T18:15:00Z' },
 ];
+
+// Capacidades reales del firmware: T1 30, T2 60, T3 60, T4 50, T5 50, T6 50, T7 50, T8 30
+const TANK_LAYOUT = [
+  { n: 1, sku: 'JAB-MANOS', price: 15.0, cap: 30, low: 3.0 },
+  { n: 2, sku: 'LIMP-MULTI', price: 10.0, cap: 60, low: 4.0 },
+  { n: 3, sku: 'CLORO', price: 7.0, cap: 60, low: 4.0 },
+  { n: 4, sku: 'DESENGRA', price: 20.0, cap: 50, low: 3.0 },
+  { n: 5, sku: 'SUAVIZANTE', price: 14.0, cap: 50, low: 3.0 },
+  { n: 6, sku: 'DET-MANCHAS', price: 14.0, cap: 50, low: 3.0 },
+  { n: 7, sku: 'DET-COLOR', price: 13.0, cap: 50, low: 3.0 },
+  { n: 8, sku: 'DET-TRASTES', price: 14.0, cap: 30, low: 3.0 },
+];
+
+// Las 3 máquinas tienen sus 8 tanques: el editor masivo se puede probar en todas.
+function buildTanks(machineId, prefix, fill) {
+  return TANK_LAYOUT.map((t, i) => {
+    const product = bySku(t.sku);
+    const current = Number((t.cap * fill[i]).toFixed(3));
+    return {
+      id: prefix + '0' + t.n,
+      machine_id: machineId,
+      tank_number: t.n,
+      product_id: product.id,
+      price_per_liter: t.price,
+      capacity_liters: t.cap,
+      current_liters: current,
+      current_percentage: Number(((current / t.cap) * 100).toFixed(2)),
+      low_threshold_liters: t.low,
+      is_above_minimum: current >= t.low,
+      is_pump_working: !(machineId === M1 && t.n === 8),
+      last_refill_at: '2026-08-20T07:00:00Z',
+      updated_at: '2026-08-27T09:30:00Z',
+      product,
+    };
+  });
+}
 
 export const sampleTanks = [
-  // Máquina 1 (8 Tanques)
-  {
-    id: 't101',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 1,
-    product_id: 'p1111111-1111-1111-1111-111111111111',
-    price_per_liter: 25.00,
-    capacity_liters: 20.000,
-    current_liters: 14.500,
-    low_threshold_liters: 3.000,
-    is_above_minimum: true,
-    is_pump_working: true,
-    last_refill_at: '2026-08-05T14:00:00Z',
-    product: sampleProducts[0]
-  },
-  {
-    id: 't102',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 2,
-    product_id: 'p2222222-2222-2222-2222-222222222222',
-    price_per_liter: 22.00,
-    capacity_liters: 20.000,
-    current_liters: 18.200,
-    low_threshold_liters: 3.000,
-    is_above_minimum: true,
-    is_pump_working: true,
-    last_refill_at: '2026-08-05T14:10:00Z',
-    product: sampleProducts[1]
-  },
-  {
-    id: 't103',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 3,
-    product_id: 'p3333333-3333-3333-3333-333333333333',
-    price_per_liter: 15.00,
-    capacity_liters: 20.000,
-    current_liters: 2.100,
-    low_threshold_liters: 3.000,
-    is_above_minimum: false,
-    is_pump_working: true,
-    last_refill_at: '2026-08-02T10:00:00Z',
-    product: sampleProducts[2]
-  },
-  {
-    id: 't104',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 4,
-    product_id: 'p4444444-4444-4444-4444-444444444444',
-    price_per_liter: 18.00,
-    capacity_liters: 20.000,
-    current_liters: 11.000,
-    low_threshold_liters: 3.000,
-    is_above_minimum: true,
-    is_pump_working: true,
-    last_refill_at: '2026-08-04T12:00:00Z',
-    product: sampleProducts[3]
-  },
-  {
-    id: 't105',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 5,
-    product_id: 'p5555555-5555-5555-5555-555555555555',
-    price_per_liter: 30.00,
-    capacity_liters: 15.000,
-    current_liters: 9.500,
-    low_threshold_liters: 2.500,
-    is_above_minimum: true,
-    is_pump_working: true,
-    last_refill_at: '2026-08-04T12:15:00Z',
-    product: sampleProducts[4]
-  },
-  {
-    id: 't106',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 6,
-    product_id: 'p6666666-6666-6666-6666-666666666666',
-    price_per_liter: 28.00,
-    capacity_liters: 15.000,
-    current_liters: 13.000,
-    low_threshold_liters: 2.500,
-    is_above_minimum: true,
-    is_pump_working: true,
-    last_refill_at: '2026-08-04T12:30:00Z',
-    product: sampleProducts[5]
-  },
-  {
-    id: 't107',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 7,
-    product_id: 'p7777777-7777-7777-7777-777777777777',
-    price_per_liter: 20.00,
-    capacity_liters: 15.000,
-    current_liters: 7.800,
-    low_threshold_liters: 2.500,
-    is_above_minimum: true,
-    is_pump_working: true,
-    last_refill_at: '2026-08-04T12:45:00Z',
-    product: sampleProducts[6]
-  },
-  {
-    id: 't108',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 8,
-    product_id: 'p8888888-8888-8888-8888-888888888888',
-    price_per_liter: 35.00,
-    capacity_liters: 15.000,
-    current_liters: 1.200,
-    low_threshold_liters: 2.500,
-    is_above_minimum: false,
-    is_pump_working: false, // Fallo de bomba registrado en alerta
-    last_refill_at: '2026-08-01T08:30:00Z',
-    product: sampleProducts[7]
-  }
+  ...buildTanks(M1, 't1', [0.72, 0.55, 0.035, 0.61, 0.44, 0.83, 0.29, 0.06]),
+  ...buildTanks(M2, 't2', [0.9, 0.78, 0.64, 0.52, 0.71, 0.48, 0.85, 0.33]),
+  ...buildTanks(M3, 't3', [0.21, 0.13, 0.48, 0.09, 0.66, 0.37, 0.58, 0.74]),
 ];
+
+const sale = (o) => ({
+  status: 'success',
+  dedup_key: null,
+  ...o,
+  machine: sampleMachines.find((m) => m.id === o.machine_id),
+  product: sampleProducts.find((p) => p.id === o.product_id),
+});
 
 export const sampleSales = [
-  {
-    id: 's1111111-1111-1111-1111-111111111111',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 1,
-    product_id: 'p1111111-1111-1111-1111-111111111111',
-    price_paid: 15.00,
-    liters_purchased: 0.600,
-    liters_flow_sensor: 0.6012,
-    tank_liters_before: 15.100,
-    tank_liters_after: 14.500,
-    status: 'success',
-    created_at: '2026-08-06T18:45:00Z',
-    product: sampleProducts[0],
-    machine_name: 'Expendedora Central Plaza Tec'
-  },
-  {
-    id: 's2222222-2222-2222-2222-222222222222',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 2,
-    product_id: 'p2222222-2222-2222-2222-222222222222',
-    price_paid: 22.00,
-    liters_purchased: 1.000,
-    liters_flow_sensor: 1.0025,
-    tank_liters_before: 19.200,
-    tank_liters_after: 18.200,
-    status: 'success',
-    created_at: '2026-08-06T17:12:00Z',
-    product: sampleProducts[1],
-    machine_name: 'Expendedora Central Plaza Tec'
-  },
-  {
-    id: 's3333333-3333-3333-3333-333333333333',
-    machine_id: 'm2222222-2222-2222-2222-222222222222',
-    tank_number: 4,
-    product_id: 'p4444444-4444-4444-4444-444444444444',
-    price_paid: 36.00,
-    liters_purchased: 2.000,
-    liters_flow_sensor: 1.9980,
-    tank_liters_before: 14.000,
-    tank_liters_after: 12.000,
-    status: 'success',
-    created_at: '2026-08-06T15:30:00Z',
-    product: sampleProducts[3],
-    machine_name: 'Expendedora Residencial Las Palmas'
-  }
+  // Caso normal: un solo medio de pago
+  sale({ id: 's-1001', machine_id: M1, tank_number: 3, product_id: bySku('CLORO').id, price_paid: 7.0, liters_purchased: 1.0, liters_flow_sensor: 0.998, tank_liters_before: 3.1, tank_liters_after: 2.1, tx_id: 1001, created_at: '2026-08-27T09:12:00Z' }),
+  sale({ id: 's-1002', machine_id: M1, tank_number: 5, product_id: bySku('SUAVIZANTE').id, price_paid: 14.0, liters_purchased: 1.0, liters_flow_sensor: 1.004, tank_liters_before: 23.0, tank_liters_after: 22.0, tx_id: 1002, created_at: '2026-08-27T08:41:00Z' }),
+  sale({ id: 's-1003', machine_id: M2, tank_number: 1, product_id: bySku('JAB-MANOS').id, price_paid: 15.0, liters_purchased: 1.0, liters_flow_sensor: 0.991, tank_liters_before: 27.5, tank_liters_after: 26.5, tx_id: 1003, created_at: '2026-08-26T17:05:00Z' }),
+  // PAGO MIXTO: dos ingresos de tipos distintos con el mismo tx_id
+  sale({ id: 's-1004', machine_id: M1, tank_number: 4, product_id: bySku('DESENGRA').id, price_paid: 40.0, liters_purchased: 2.0, liters_flow_sensor: 1.995, tank_liters_before: 32.5, tank_liters_after: 30.5, tx_id: 1004, created_at: '2026-08-26T15:20:00Z' }),
+  // DOS INGRESOS DEL MISMO TIPO: debe mostrar "Monedas", no "Mixto"
+  sale({ id: 's-1005', machine_id: M1, tank_number: 2, product_id: bySku('LIMP-MULTI').id, price_paid: 15.0, liters_purchased: 1.5, liters_flow_sensor: 1.493, tank_liters_before: 34.5, tank_liters_after: 33.0, tx_id: 1005, created_at: '2026-08-26T12:02:00Z' }),
+  // VENTA FALLIDA: nunca genera fila en sale_incomes (el reembolso es implícito)
+  sale({ id: 's-1006', machine_id: M1, tank_number: 8, product_id: bySku('DET-TRASTES').id, price_paid: 14.0, liters_purchased: 1.0, liters_flow_sensor: 0.0, tank_liters_before: 1.8, tank_liters_after: 1.8, status: 'fail', tx_id: 1006, created_at: '2026-08-25T19:48:00Z' }),
+  // ANOMALIA: venta concretada con tx_id pero sin ingreso registrado
+  sale({ id: 's-1007', machine_id: M2, tank_number: 7, product_id: bySku('DET-COLOR').id, price_paid: 13.0, liters_purchased: 1.0, liters_flow_sensor: 1.001, tank_liters_before: 43.0, tank_liters_after: 42.0, tx_id: 1007, created_at: '2026-08-25T11:30:00Z' }),
+  // LEGACY: anterior a fw 2.1.0, sin tx_id
+  sale({ id: 's-0900', machine_id: M3, tank_number: 6, product_id: bySku('DET-MANCHAS').id, price_paid: 14.0, liters_purchased: 1.0, liters_flow_sensor: 0.997, tank_liters_before: 19.5, tank_liters_after: 18.5, tx_id: null, created_at: '2026-08-18T10:15:00Z' }),
 ];
 
+const income = (o) => ({
+  dedup_key: null,
+  ...o,
+  machine: sampleMachines.find((m) => m.id === o.machine_id),
+});
+
 export const sampleSaleIncomes = [
-  {
-    id: 'i1111111-1111-1111-1111-111111111111',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    payment_type: 'monedas',
-    amount: 15.00,
-    created_at: '2026-08-06T18:45:00Z'
-  },
-  {
-    id: 'i2222222-2222-2222-2222-222222222222',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    payment_type: 'efectivo',
-    amount: 20.00,
-    created_at: '2026-08-06T17:12:00Z'
-  },
-  {
-    id: 'i3333333-3333-3333-3333-333333333333',
-    machine_id: 'm2222222-2222-2222-2222-222222222222',
-    payment_type: 'tarjeta',
-    amount: 36.00,
-    created_at: '2026-08-06T15:30:00Z'
-  }
+  income({ id: 'i-1001', machine_id: M1, payment_type: 'monedas', amount: 7.0, tx_id: 1001, created_at: '2026-08-27T09:11:50Z' }),
+  income({ id: 'i-1002', machine_id: M1, payment_type: 'efectivo', amount: 20.0, tx_id: 1002, created_at: '2026-08-27T08:40:48Z' }),
+  income({ id: 'i-1003', machine_id: M2, payment_type: 'tarjeta', amount: 15.0, tx_id: 1003, created_at: '2026-08-26T17:04:55Z' }),
+  income({ id: 'i-1004a', machine_id: M1, payment_type: 'monedas', amount: 15.0, tx_id: 1004, created_at: '2026-08-26T15:19:30Z' }),
+  income({ id: 'i-1004b', machine_id: M1, payment_type: 'tarjeta', amount: 25.0, tx_id: 1004, created_at: '2026-08-26T15:19:52Z' }),
+  income({ id: 'i-1005a', machine_id: M1, payment_type: 'monedas', amount: 10.0, tx_id: 1005, created_at: '2026-08-26T12:01:30Z' }),
+  income({ id: 'i-1005b', machine_id: M1, payment_type: 'monedas', amount: 5.0, tx_id: 1005, created_at: '2026-08-26T12:01:44Z' }),
+  // Huérfano: saldo introducido que no llegó a concretar venta
+  income({ id: 'i-1099', machine_id: M1, payment_type: 'monedas', amount: 12.5, tx_id: 1099, created_at: '2026-08-27T09:29:00Z' }),
 ];
 
 export const sampleTankOperations = [
-  {
-    id: 'op111111-1111-1111-1111-111111111111',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 1,
-    product_id: 'p1111111-1111-1111-1111-111111111111',
-    operation_type: 'refill',
-    tank_liters_before: 2.100,
-    tank_liters_after: 20.000,
-    net_liters: 17.900,
-    technician_user_id: 'u1111111-1111-1111-1111-111111111111',
-    technician_name: 'Ing. Carlos Mendoza (Técnico)',
-    created_at: '2026-08-05T14:00:00Z'
-  },
-  {
-    id: 'op222222-2222-2222-2222-222222222222',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    tank_number: 3,
-    product_id: 'p3333333-3333-3333-3333-333333333333',
-    operation_type: 'purge',
-    tank_liters_before: 5.000,
-    tank_liters_after: 0.000,
-    net_liters: -5.000,
-    technician_user_id: 'u1111111-1111-1111-1111-111111111111',
-    technician_name: 'Ing. Carlos Mendoza (Técnico)',
-    created_at: '2026-08-02T09:30:00Z'
-  }
+  { id: 'op-01', machine_id: M1, tank_number: 3, product_id: bySku('CLORO').id, operation_type: 'refill', tank_liters_before: 2.1, tank_liters_after: 58.0, net_liters: 55.9, technician_user_id: 'u1111111-1111-1111-1111-111111111111', created_at: '2026-08-20T07:05:00Z', machine: sampleMachines[0], product: bySku('CLORO') },
+  { id: 'op-02', machine_id: M1, tank_number: 8, product_id: bySku('DET-TRASTES').id, operation_type: 'purge', tank_liters_before: 4.0, tank_liters_after: 1.8, net_liters: -2.2, technician_user_id: 'u1111111-1111-1111-1111-111111111111', created_at: '2026-08-25T20:10:00Z', machine: sampleMachines[0], product: bySku('DET-TRASTES') },
 ];
 
 export const sampleMoneyCollections = [
-  {
-    id: 'mc111111-1111-1111-1111-111111111111',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    payment_type: 'monedas',
-    amount_collected: 500.00,
-    status: 'success',
-    collector_user_id: 'u1111111-1111-1111-1111-111111111111',
-    collector_name: 'Ing. Carlos Mendoza',
-    notes: 'Corte semanal de caja de monedas. Depósito en sucursal.',
-    created_at: '2026-08-04T16:00:00Z'
-  }
+  { id: 'mc-01', machine_id: M1, payment_type: 'monedas', amount_collected: 980.0, status: 'success', collector_user_id: 'u0000000-0000-0000-0000-000000000000', notes: 'Corte de caja semanal', created_at: '2026-08-24T16:00:00Z', machine: sampleMachines[0] },
 ];
 
+const alert = (o) => ({
+  tank_number: null,
+  product_id: null,
+  value_num1: null,
+  value_num2: null,
+  value_string: null,
+  is_resolved: false,
+  resolved_at: null,
+  resolved_by: null,
+  dedup_key: null,
+  ...o,
+  machine: sampleMachines.find((m) => m.id === o.machine_id),
+  product: o.product_id ? sampleProducts.find((p) => p.id === o.product_id) : null,
+});
+
 export const sampleSystemAlerts = [
-  {
-    id: 'a1111111-1111-1111-1111-111111111111',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    machine_name: 'Expendedora Central Plaza Tec',
-    category: 'stock',
-    alert_type: 'low_stock_warning',
-    tank_number: 3,
-    product_id: 'p3333333-3333-3333-3333-333333333333',
-    product_name: 'Cloro Blanqueador 6%',
-    value_num1: 2.10, // Litros actuales
-    value_num2: 3.00, // Umbral mínimo
-    value_string: 'Tanque 3 por debajo del umbral de reserva (2.10L / 3.00L)',
-    is_resolved: false,
-    resolved_at: null,
-    created_at: '2026-08-06T14:20:00Z'
-  },
-  {
-    id: 'a2222222-2222-2222-2222-222222222222',
-    machine_id: 'm1111111-1111-1111-1111-111111111111',
-    machine_name: 'Expendedora Central Plaza Tec',
-    category: 'pump',
-    alert_type: 'pump_flow_discrepancy',
-    tank_number: 8,
-    product_id: 'p8888888-8888-8888-8888-888888888888',
-    product_name: 'Desinfectante Cuaternario de 5ta Gen',
-    value_num1: 0.00,
-    value_num2: 0.50,
-    value_string: 'Bomba 8 no generó pulsos en medidor de flujo durante surtido',
-    is_resolved: false,
-    resolved_at: null,
-    created_at: '2026-08-06T16:05:00Z'
-  },
-  {
-    id: 'a3333333-3333-3333-3333-333333333333',
-    machine_id: 'm3333333-3333-3333-3333-333333333333',
-    machine_name: 'Expendedora Universidad Campus Sur',
-    category: 'security',
-    alert_type: 'door_open_warning',
-    tank_number: null,
-    product_id: null,
-    product_name: null,
-    value_num1: 1.00,
-    value_num2: null,
-    value_string: 'Puerta principal abierta fuera de ventana de mantenimiento',
-    is_resolved: false,
-    resolved_at: null,
-    created_at: '2026-08-06T18:15:00Z'
-  }
+  // value_string trae SOLO el nombre del producto: obliga a componer la frase
+  alert({ id: 'a-01', machine_id: M1, category: 'stock', alert_type: 'low_stock', tank_number: 3, product_id: bySku('CLORO').id, value_num1: 2.1, value_num2: 4.0, value_string: 'Cloro', created_at: '2026-08-27T09:13:00Z' }),
+  alert({ id: 'a-02', machine_id: M1, category: 'pump', alert_type: 'pump_disabled', tank_number: 8, product_id: bySku('DET-TRASTES').id, value_string: 'Det. Trastes', created_at: '2026-08-25T19:48:10Z' }),
+  alert({ id: 'a-03', machine_id: M1, category: 'sales', alert_type: 'sale_failed', tank_number: 8, product_id: bySku('DET-TRASTES').id, value_num1: 1.0, value_num2: 0.0, created_at: '2026-08-25T19:48:05Z' }),
+  alert({ id: 'a-09', machine_id: M1, category: 'pump', alert_type: 'flow_sensor_fail', tank_number: 8, product_id: bySku('DET-TRASTES').id, value_num1: 0.0, value_num2: 1.0, created_at: '2026-08-25T19:48:02Z' }),
+  alert({ id: 'a-04', machine_id: M3, category: 'security', alert_type: 'door_open', created_at: '2026-08-26T18:14:00Z' }),
+  alert({ id: 'a-05', machine_id: M3, category: 'security', alert_type: 'tilt_detected', created_at: '2026-08-26T18:14:30Z' }),
+  alert({ id: 'a-06', machine_id: M2, category: 'security', alert_type: 'coinbox_tampered', value_num1: 45.5, created_at: '2026-08-24T03:12:00Z', is_resolved: true, resolved_at: '2026-08-24T08:40:00Z', resolved_by: 'u1111111-1111-1111-1111-111111111111' }),
+  alert({ id: 'a-07', machine_id: M2, category: 'module', alert_type: 'restart', value_string: 'ESP32', created_at: '2026-08-23T05:00:00Z', is_resolved: true, resolved_at: '2026-08-23T05:00:00Z' }),
+  // config_ack se inserta ya resuelto por el webhook
+  alert({ id: 'a-08', machine_id: M1, category: 'module', alert_type: 'config_ack', value_string: 'req_id=8f14e45f-ceea-467a-9f6b-1d2c3e4a5b6c status=stored restart=pending_5s', created_at: '2026-08-22T13:02:00Z', is_resolved: true, resolved_at: '2026-08-22T13:02:00Z' }),
 ];
 
 export const sampleProfiles = [
-  {
-    id: 'u0000000-0000-0000-0000-000000000000',
-    email: 'admin.limpieziot@vendingapp.com',
-    full_name: 'Administrador General (Super Admin)',
-    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-    role: 'admin',
-    assigned_machine_ids: ['m1111111-1111-1111-1111-111111111111', 'm2222222-2222-2222-2222-222222222222', 'm3333333-3333-3333-3333-333333333333'],
-    created_at: '2026-08-01T00:00:00Z'
-  },
-  {
-    id: 'u3333333-3333-3333-3333-333333333333',
-    email: 'admin.norte@vendingapp.com',
-    full_name: 'Admin Sucursal Norte',
-    avatar_url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150',
-    role: 'admin',
-    assigned_machine_ids: ['m3333333-3333-3333-3333-333333333333'],
-    created_at: '2026-08-02T00:00:00Z'
-  },
-  {
-    id: 'u1111111-1111-1111-1111-111111111111',
-    email: 'carlos.mendoza@vendingapp.com',
-    full_name: 'Ing. Carlos Mendoza (Técnico Zona 1)',
-    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-    role: 'technician',
-    assigned_machine_ids: ['m1111111-1111-1111-1111-111111111111'],
-    created_at: '2026-08-01T00:00:00Z'
-  },
-  {
-    id: 'u2222222-2222-2222-2222-222222222222',
-    email: 'observador@vendingapp.com',
-    full_name: 'Laura Gómez (Auditora Las Palmas)',
-    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-    role: 'viewer',
-    assigned_machine_ids: ['m2222222-2222-2222-2222-222222222222'],
-    created_at: '2026-08-01T00:00:00Z'
-  }
+  { id: 'u0000000-0000-0000-0000-000000000000', email: 'admin@limpieziot.mx', full_name: 'Ángel Covarrubias', avatar_url: null, role: 'admin', assigned_machine_ids: [M1, M2, M3], created_at: '2026-07-01T08:00:00Z' },
+  { id: 'u9999999-9999-9999-9999-999999999999', email: 'norte@limpieziot.mx', full_name: 'Dirección Zona Norte', avatar_url: null, role: 'admin', assigned_machine_ids: [M3], created_at: '2026-07-02T08:00:00Z' },
+  { id: 'u1111111-1111-1111-1111-111111111111', email: 'tecnico@limpieziot.mx', full_name: 'Carlos Mendoza', avatar_url: null, role: 'technician', assigned_machine_ids: [M1], created_at: '2026-07-03T08:00:00Z' },
+  { id: 'u2222222-2222-2222-2222-222222222222', email: 'consulta@limpieziot.mx', full_name: 'Laura Ríos', avatar_url: null, role: 'viewer', assigned_machine_ids: [M2], created_at: '2026-07-04T08:00:00Z' },
 ];

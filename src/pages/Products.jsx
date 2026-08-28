@@ -1,221 +1,306 @@
-import React, { useEffect, useState } from 'react';
-import { getProducts, createProduct } from '../services/productService';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Check, Package, PackagePlus, Pencil } from 'lucide-react';
+import {
+  createProduct,
+  getProducts,
+  updateProduct,
+  validateProduct,
+} from '../services/productService';
 import { useAuth } from '../context/AuthContext';
-import { Package, Plus, Search, Tag, X, Check } from 'lucide-react';
+import { useToast } from '../components/ui/Toast';
+import { Modal } from '../components/ui/Modal';
+import { DataTable } from '../components/ui/DataTable';
+import { EmptyState } from '../components/ui/Primitives';
+import { FilterBar, SearchInput } from '../components/ui/Filters';
+import { formatMoney } from '../lib/format';
+
+const EMPTY = {
+  sku: '',
+  name: '',
+  description: '',
+  default_price_per_liter: '',
+  density_kg_m3: '1000',
+};
 
 export const Products = () => {
   const { isAdmin } = useAuth();
-  const [products, setProducts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const toast = useToast();
 
-  const [formData, setFormData] = useState({
-    sku: '',
-    name: '',
-    description: '',
-    default_price_per_liter: '',
-    density_kg_m3: '1000.00'
-  });
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+
+  const [editing, setEditing] = useState(null); // null | 'new' | producto
+  const [form, setForm] = useState(EMPTY);
+  const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const data = await getProducts();
-      setProducts(data);
-    } catch (err) {
-      console.error('Error al cargar catálogo de productos:', err);
+      setProducts(await getProducts());
+    } catch (e) {
+      setError(e);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.sku.toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q)
+    );
+  }, [products, search]);
+
+  const openNew = () => {
+    setForm(EMPTY);
+    setFormError(null);
+    setEditing('new');
   };
 
-  const handleCreateProduct = async (e) => {
+  const openEdit = (p) => {
+    setForm({
+      sku: p.sku,
+      name: p.name,
+      description: p.description || '',
+      default_price_per_liter: String(p.default_price_per_liter),
+      density_kg_m3: String(p.density_kg_m3 ?? 1000),
+    });
+    setFormError(null);
+    setEditing(p);
+  };
+
+  const close = () => {
+    setEditing(null);
+    setFormError(null);
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
+    const problem = validateProduct(form);
+    if (problem) {
+      setFormError(problem);
+      return;
+    }
     setSubmitting(true);
+    setFormError(null);
     try {
-      await createProduct({
-        ...formData,
-        default_price_per_liter: Number(formData.default_price_per_liter),
-        density_kg_m3: Number(formData.density_kg_m3)
-      });
-      setShowAddModal(false);
-      setFormData({ sku: '', name: '', description: '', default_price_per_liter: '', density_kg_m3: '1000.00' });
-      await loadProducts();
+      if (editing === 'new') {
+        await createProduct(form);
+        toast.success(`Producto "${form.name}" añadido al catálogo.`);
+      } else {
+        await updateProduct(editing.id, form);
+        toast.success(`Producto "${form.name}" actualizado.`);
+      }
+      close();
+      await load();
     } catch (err) {
-      alert('Error al crear producto: ' + err.message);
+      // Inline y no como alert(): el error pertenece al formulario.
+      setFormError(err.message);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const filtered = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const columns = [
+    {
+      id: 'sku',
+      header: 'SKU',
+      accessor: (p) => <span className="font-mono text-[11px] font-bold text-accent-soft">{p.sku}</span>,
+    },
+    {
+      id: 'name',
+      header: 'Producto',
+      accessor: (p) => (
+        <div className="min-w-0">
+          <p className="font-bold text-content truncate">{p.name}</p>
+          {p.description && (
+            <p className="text-[11px] text-content-muted truncate max-w-md">{p.description}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'price',
+      header: 'Precio de catálogo',
+      align: 'right',
+      accessor: (p) => (
+        <span className="font-bold text-emerald-300">{formatMoney(p.default_price_per_liter)}/L</span>
+      ),
+    },
+    {
+      id: 'density',
+      header: 'Densidad',
+      align: 'right',
+      hideBelow: 'md',
+      accessor: (p) => (
+        <span className="text-content-muted">{Number(p.density_kg_m3 || 0).toFixed(0)} kg/m³</span>
+      ),
+    },
+    ...(isAdmin
+      ? [
+          {
+            id: 'acciones',
+            header: '',
+            align: 'right',
+            accessor: (p) => (
+              <button onClick={() => openEdit(p)} className="btn-ghost" aria-label={`Editar ${p.name}`}>
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            ),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Catálogo de Productos de Limpieza</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Definición de productos, SKU, densidad y precio estándar por litro</p>
+          <h2 className="text-2xl font-black text-content tracking-tight">Catálogo de productos</h2>
+          <p className="text-xs text-content-muted mt-0.5">
+            Productos disponibles para asignar a los tanques. El precio de catálogo es la referencia;
+            el precio que cobra cada máquina se ajusta en su ficha.
+          </p>
         </div>
         {isAdmin && (
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-brand-500/20"
-          >
-            <Plus className="w-4 h-4" /> Nuevo Producto
+          <button onClick={openNew} className="btn-primary">
+            <PackagePlus className="w-4 h-4" /> Nuevo producto
           </button>
         )}
       </div>
 
-      {/* Buscador */}
-      <div className="relative bg-slate-900 p-2.5 rounded-2xl border border-slate-800">
-        <Search className="w-4 h-4 text-slate-500 absolute left-5 top-4" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar por nombre o código SKU..."
-          className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
-        />
-      </div>
+      <FilterBar activeCount={search ? 1 : 0} onReset={() => setSearch('')}>
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nombre, SKU o descripción…" />
+      </FilterBar>
 
-      {/* Tabla de Productos */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="p-4">SKU / Código</th>
-                <th className="p-4">Nombre del Producto</th>
-                <th className="p-4">Descripción</th>
-                <th className="p-4">Precio Sugerido/Litro</th>
-                <th className="p-4">Densidad (kg/m³)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 font-medium">
-              {loading ? (
-                <tr>
-                  <td colSpan="5" className="p-8 text-center text-slate-400">Cargando productos...</td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="p-8 text-center text-slate-400">No hay productos registrados.</td>
-                </tr>
-              ) : (
-                filtered.map((prod) => (
-                  <tr key={prod.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="p-4 font-mono font-bold text-brand-400">{prod.sku}</td>
-                    <td className="p-4 font-bold text-white">{prod.name}</td>
-                    <td className="p-4 text-slate-400 max-w-xs truncate">{prod.description || '-'}</td>
-                    <td className="p-4 font-bold text-emerald-400">${Number(prod.default_price_per_liter).toFixed(2)} MXN</td>
-                    <td className="p-4 text-slate-300">{prod.density_kg_m3}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        rows={filtered}
+        loading={loading}
+        error={error}
+        onRetry={load}
+        empty={
+          <EmptyState
+            icon={Package}
+            title={search ? 'Sin coincidencias' : 'El catálogo está vacío'}
+            description={search ? 'Prueba con otro término de búsqueda.' : 'Añade el primer producto para poder asignarlo a los tanques.'}
+          />
+        }
+      />
 
-      {/* Modal Crear Producto */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h4 className="text-base font-bold text-white">Registrar Nuevo Producto</h4>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
+      <Modal
+        open={editing !== null}
+        onClose={close}
+        icon={editing === 'new' ? PackagePlus : Pencil}
+        title={editing === 'new' ? 'Nuevo producto' : 'Editar producto'}
+        subtitle={editing && editing !== 'new' ? editing.sku : undefined}
+      >
+        <form onSubmit={submit} className="space-y-3">
+          {formError && (
+            <div className="p-3 rounded-xl bg-status-danger/10 border border-status-danger/30 text-xs text-rose-300">
+              {formError}
             </div>
+          )}
 
-            <form onSubmit={handleCreateProduct} className="space-y-3 pt-2">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">SKU (Ej. DET-LIG-009)</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Nombre del Producto</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Descripción</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-500 h-20"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Precio Sugerido/Litro</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    required
-                    value={formData.default_price_per_liter}
-                    onChange={(e) => setFormData({ ...formData, default_price_per_liter: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Densidad (kg/m³)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    required
-                    value={formData.density_kg_m3}
-                    onChange={(e) => setFormData({ ...formData, density_kg_m3: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-brand-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 py-2 rounded-xl bg-brand-500 text-slate-950 text-xs font-bold hover:bg-brand-400 flex items-center justify-center gap-1"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  {submitting ? 'Guardando...' : 'Crear Producto'}
-                </button>
-              </div>
-            </form>
+          <div>
+            <label className="field-label" htmlFor="sku">
+              SKU (ej. DET-COLOR)
+            </label>
+            <input
+              id="sku"
+              className="input uppercase"
+              required
+              value={form.sku}
+              onChange={(e) => setForm({ ...form, sku: e.target.value })}
+              placeholder="DET-COLOR"
+            />
           </div>
-        </div>
-      )}
+
+          <div>
+            <label className="field-label" htmlFor="name">
+              Nombre
+            </label>
+            <input
+              id="name"
+              className="input"
+              required
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Detergente Pro-Color"
+            />
+          </div>
+
+          <div>
+            <label className="field-label" htmlFor="description">
+              Descripción
+            </label>
+            <textarea
+              id="description"
+              rows={2}
+              className="textarea"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Detergente para ropa de color, protege la intensidad."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="field-label" htmlFor="price">
+                Precio por litro (MXN)
+              </label>
+              <input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                className="input"
+                value={form.default_price_per_liter}
+                onChange={(e) => setForm({ ...form, default_price_per_liter: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="field-label" htmlFor="density">
+                Densidad (kg/m³)
+              </label>
+              <input
+                id="density"
+                type="number"
+                step="0.01"
+                min="1"
+                required
+                className="input"
+                value={form.density_kg_m3}
+                onChange={(e) => setForm({ ...form, density_kg_m3: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-3">
+            <button type="button" onClick={close} className="btn-secondary flex-1">
+              Cancelar
+            </button>
+            <button type="submit" disabled={submitting} className="btn-primary flex-1">
+              <Check className="w-3.5 h-3.5" />
+              {submitting ? 'Guardando…' : editing === 'new' ? 'Crear producto' : 'Guardar cambios'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, Mail, Lock, LogIn, Sparkles, Cpu } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, LogIn, Sparkles } from 'lucide-react';
+import { Logo } from '../components/common/Logo';
 
 export const Login = () => {
   const { loginWithGoogle, loginWithEmail, isDemo, switchDemoRole, user } = useAuth();
@@ -46,9 +47,7 @@ export const Login = () => {
       <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative z-10">
         {/* Header Marca */}
         <div className="text-center mb-8">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-brand-600 to-cyan-500 text-slate-950 mb-3 shadow-lg shadow-brand-500/20">
-            <Cpu className="w-8 h-8" />
-          </div>
+          <Logo size="lg" className="inline-flex mb-3" />
           <h2 className="text-2xl font-black text-white tracking-tight">LIMPIEZIOT Vending PWA</h2>
           <p className="text-xs text-slate-400 mt-1">Control & Monitoreo de Máquinas Expendedoras</p>
         </div>

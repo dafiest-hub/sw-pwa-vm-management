@@ -1,0 +1,142 @@
+/**
+ * Tokens de color de LIMPIEZIOT.
+ *
+ * Los valores son CANALES RGB SEPARADOS POR ESPACIO, sin rgb().
+ * Es lo que permite que Tailwind aplique <alpha-value> y que sigan funcionando
+ * las clases con opacidad que ya existen en el código (bg-slate-800/40,
+ * border-brand-500/30, divide-slate-800/60, ...).
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * PARA RECOLOREAR LA MARCA: cambiar sólo las tres primitivas --brand-* de abajo
+ * y BRAND_HEX en src/theme/brand.js. El resto de la interfaz sigue.
+ *
+ * La paleta es deliberadamente NEUTRA y no deriva de los colores del logo
+ * (magenta / azul / índigo), porque el logo puede cambiar de color.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+:root {
+  /* ── Primitivas de marca ─────────────────────────────────────────────── */
+  --brand-soft: 94 234 212; /* teal-300 */
+  --brand-base: 13 148 136; /* teal-600 */
+  --brand-strong: 15 118 110; /* teal-700  #0F766E */
+
+  /* ── Escala de acento (teal petróleo) ────────────────────────────────── */
+  --c-primary-50: 240 253 250;
+  --c-primary-100: 204 251 241;
+  --c-primary-200: 153 246 228;
+  --c-primary-300: var(--brand-soft);
+  --c-primary-400: 45 212 191;
+  --c-primary-500: 20 184 166;
+  --c-primary-600: var(--brand-base);
+  --c-primary-700: var(--brand-strong);
+  --c-primary-800: 17 94 89;
+  --c-primary-900: 19 78 74;
+  --c-primary-950: 4 47 46;
+
+  /* ── Neutros (pizarra) ───────────────────────────────────────────────── */
+  --c-neutral-50: 248 250 252;
+  --c-neutral-100: 241 245 249;
+  --c-neutral-200: 226 232 240;
+  --c-neutral-300: 203 213 225;
+  --c-neutral-400: 148 163 184;
+  --c-neutral-500: 100 116 139;
+  --c-neutral-600: 71 85 105;
+  --c-neutral-700: 51 65 85;
+  --c-neutral-800: 30 41 59;
+  --c-neutral-850: 21 32 51;
+  --c-neutral-900: 15 23 42;
+  --c-neutral-950: 11 17 32;
+
+  /* ── Semáforo (rampa completa: el override de Tailwind reemplaza la escala) ── */
+  --c-success-50: 240 253 244;
+  --c-success-100: 220 252 231;
+  --c-success-200: 187 247 208;
+  --c-success-300: 134 239 172;
+  --c-success-400: 74 222 128;
+  --c-success-500: 34 197 94;
+  --c-success-600: 22 163 74;
+  --c-success-700: 21 128 61;
+  --c-success-800: 22 101 52;
+  --c-success-900: 20 83 45;
+  --c-success-950: 5 46 22;
+
+  --c-warning-50: 255 251 235;
+  --c-warning-100: 254 243 199;
+  --c-warning-200: 253 230 138;
+  --c-warning-300: 252 211 77;
+  --c-warning-400: 251 191 36;
+  --c-warning-500: 245 158 11;
+  --c-warning-600: 217 119 6;
+  --c-warning-700: 180 83 9;
+  --c-warning-800: 146 64 14;
+  --c-warning-900: 120 53 15;
+  --c-warning-950: 69 26 3;
+
+  --c-danger-50: 255 241 242;
+  --c-danger-100: 255 228 230;
+  --c-danger-200: 254 205 211;
+  --c-danger-300: 253 164 175;
+  --c-danger-400: 251 113 133;
+  --c-danger-500: 244 63 94;
+  --c-danger-600: 225 29 72;
+  --c-danger-700: 190 18 60;
+  --c-danger-800: 159 18 57;
+  --c-danger-900: 136 19 55;
+  --c-danger-950: 76 5 25;
+
+  --c-info-50: 240 249 255;
+  --c-info-100: 224 242 254;
+  --c-info-200: 186 230 253;
+  --c-info-300: 125 211 252;
+  --c-info-400: 56 189 248;
+  --c-info-500: 14 165 233;
+  --c-info-600: 2 132 199;
+  --c-info-700: 3 105 161;
+  --c-info-800: 7 89 133;
+  --c-info-900: 12 74 110;
+  --c-info-950: 8 47 73;
+
+  /* ── Tokens semánticos ───────────────────────────────────────────────── */
+  --surface-base: var(--c-neutral-950);
+  --surface-raised: var(--c-neutral-900);
+  --surface-sunken: var(--c-neutral-950);
+  --surface-overlay: var(--c-neutral-900);
+  --surface-hover: var(--c-neutral-800);
+
+  /* "line" y no "border": border-border-* sería ilegible */
+  --line-subtle: var(--c-neutral-800);
+  --line-default: var(--c-neutral-700);
+  --line-strong: var(--c-neutral-600);
+  --line-focus: var(--c-primary-500);
+
+  --content-primary: 255 255 255;
+  --content-secondary: var(--c-neutral-300);
+  --content-muted: var(--c-neutral-400);
+  --content-faint: var(--c-neutral-500);
+  --content-inverted: var(--c-neutral-950);
+
+  --accent: var(--c-primary-600);
+  --accent-hover: var(--c-primary-500);
+  --accent-soft: var(--c-primary-400);
+  --accent-contrast: 255 255 255;
+
+  --status-ok: var(--c-success-500);
+  --status-warn: var(--c-warning-500);
+  --status-danger: var(--c-danger-500);
+  --status-info: var(--c-info-500);
+  --status-neutral: var(--c-neutral-500);
+
+  /* ── Series de gráficas (recharts las lee desde aquí) ────────────────── */
+  --chart-1: var(--c-primary-500);
+  --chart-2: var(--c-success-500);
+  --chart-3: var(--c-info-500);
+  --chart-4: var(--c-warning-500);
+  --chart-5: 168 85 247;
+  --chart-6: var(--c-danger-500);
+
+  --chart-axis: var(--c-neutral-500);
+  --chart-grid: var(--c-neutral-800);
+  --chart-tooltip-bg: var(--c-neutral-900);
+  --chart-tooltip-border: var(--c-neutral-700);
+}

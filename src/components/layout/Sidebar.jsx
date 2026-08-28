@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { IS_DEMO } from '../../lib/dataAccess';
 import { 
   LayoutDashboard, 
   Cpu, 
@@ -11,7 +12,8 @@ import {
   Users, 
   UserCircle,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Database
 } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, onClose }) => {
@@ -19,8 +21,8 @@ export const Sidebar = ({ isOpen, onClose }) => {
 
   const navigationItems = [
     {
-      name: 'Dashboard General',
-      path: '/',
+      name: 'Panel de control',
+      path: '/dashboard',
       icon: LayoutDashboard,
       roles: ['admin', 'technician', 'viewer']
     },
@@ -98,7 +100,6 @@ export const Sidebar = ({ isOpen, onClose }) => {
                 key={item.path}
                 to={item.path}
                 onClick={onClose}
-                end={item.path === '/'}
                 className={({ isActive }) => `
                   flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 group
                   ${isActive 
@@ -117,15 +118,28 @@ export const Sidebar = ({ isOpen, onClose }) => {
           })}
         </div>
 
-        {/* Footer Sidebar info de Firmware y Servidor */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-950/40">
-          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px] space-y-1.5">
-            <div className="flex items-center gap-2 text-slate-300 font-semibold">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Firmware actualizado</span>
+        {/* Origen de los datos. Antes había aquí tres afirmaciones fijas y falsas
+            ("Firmware actualizado", "Supabase RLS Protection"). */}
+        <div className="p-4 border-t border-line-subtle bg-surface/40">
+          <div className="p-3 rounded-xl bg-surface-raised border border-line-subtle text-[11px] space-y-1.5">
+            <div className="flex items-center gap-2 font-semibold">
+              {IS_DEMO ? (
+                <>
+                  <Database className="w-4 h-4 text-amber-400" />
+                  <span className="text-amber-300">Modo demostración</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span className="text-content-secondary">Conectado a Supabase</span>
+                </>
+              )}
             </div>
-            <div className="text-slate-400 text-[10px] font-mono">LIMPIEZIOT OS v2.0.0</div>
-            <div className="text-slate-400 text-[10px]">Supabase RLS Protection</div>
+            <div className="text-content-muted text-[10px]">
+              {IS_DEMO
+                ? 'Datos de ejemplo en memoria, sin conexión a la base.'
+                : 'Los datos provienen de la base de producción.'}
+            </div>
           </div>
         </div>
       </aside>

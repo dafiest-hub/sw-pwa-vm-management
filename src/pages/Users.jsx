@@ -1,61 +1,63 @@
-import React, { useEffect, useState } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
-import { sampleProfiles } from '../mock/sampleData';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getMachines } from '../services/machineService';
+import {
+  getProfiles,
+  updateAssignedMachines,
+  updateProfileRole,
+} from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/ui/Toast';
+import { ErrorState, LoadingState } from '../components/ui/Primitives';
 import { Users as UsersIcon, Shield, Crown, Wrench, Eye, Cpu, Check, X, Sliders } from 'lucide-react';
 
 export const Users = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
+  const toast = useToast();
   const [profiles, setProfiles] = useState([]);
   const [allMachines, setAllMachines] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Modal Asignar Máquinas
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedMachineIds, setSelectedMachineIds] = useState([]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const machs = await getMachines();
+      const [machs, profs] = await Promise.all([getMachines(), getProfiles()]);
       setAllMachines(machs);
-
-      if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (!error && data) {
-          setProfiles(data);
-          return;
-        }
-      }
-      setProfiles(sampleProfiles);
+      setProfiles(profs);
     } catch (err) {
-      console.error('Error al obtener datos:', err);
-      setProfiles(sampleProfiles);
+      setError(err);
+      setProfiles([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleRoleChange = async (userId, newRole) => {
+    // Quitarse a uno mismo el rol admin deja la instalación sin quien administre.
+    if (userId === user?.id && newRole !== 'admin') {
+      toast.error('No puedes quitarte a ti mismo el rol de administrador.');
+      return;
+    }
+    const previous = profiles;
+    setProfiles((prev) => prev.map((p) => (p.id === userId ? { ...p, role: newRole } : p)));
     try {
-      if (isSupabaseConfigured && supabase) {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ role: newRole })
-          .eq('id', userId);
-        if (error) throw error;
-      }
-      setProfiles(profiles.map(p => p.id === userId ? { ...p, role: newRole } : p));
+      await updateProfileRole(userId, newRole);
+      toast.success('Rol actualizado.');
     } catch (err) {
-      alert('Error al actualizar rol: ' + err.message);
+      setProfiles(previous);
+      toast.error(
+        `No se pudo actualizar el rol: ${err.message}. ` +
+          'Revisa que exista una política RLS que permita a un administrador modificar otros perfiles.'
+      );
     }
   };
 
@@ -65,27 +67,24 @@ export const Users = () => {
   };
 
   const handleToggleMachine = (machId) => {
-    if (selectedMachineIds.includes(machId)) {
-      setSelectedMachineIds(selectedMachineIds.filter(id => id !== machId));
-    } else {
-      setSelectedMachineIds([...selectedMachineIds, machId]);
-    }
+    setSelectedMachineIds((prev) =>
+      prev.includes(machId) ? prev.filter((id) => id !== machId) : [...prev, machId]
+    );
   };
 
   const handleSaveAssignedMachines = async () => {
     if (!selectedUser) return;
     try {
-      if (isSupabaseConfigured && supabase) {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ assigned_machine_ids: selectedMachineIds })
-          .eq('id', selectedUser.id);
-        if (error) throw error;
-      }
-      setProfiles(profiles.map(p => p.id === selectedUser.id ? { ...p, assigned_machine_ids: selectedMachineIds } : p));
+      await updateAssignedMachines(selectedUser.id, selectedMachineIds);
+      setProfiles((prev) =>
+        prev.map((p) =>
+          p.id === selectedUser.id ? { ...p, assigned_machine_ids: selectedMachineIds } : p
+        )
+      );
       setSelectedUser(null);
+      toast.success('Asignación de máquinas guardada.');
     } catch (err) {
-      alert('Error al guardar asignación de máquinas: ' + err.message);
+      toast.error(`No se pudo guardar la asignación: ${err.message}`);
     }
   };
 
@@ -122,7 +121,9 @@ export const Users = () => {
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-medium">
               {loading ? (
-                <tr><td colSpan="5" className="p-8 text-center text-slate-400">Cargando perfiles...</td></tr>
+                <tr><td colSpan="5"><LoadingState label="Cargando perfiles…" /></td></tr>
+              ) : error ? (
+                <tr><td colSpan="5"><ErrorState error={error} onRetry={loadData} compact /></td></tr>
               ) : (
                 profiles.map((prof) => {
                   const assignedCount = prof.assigned_machine_ids?.length || 0;

@@ -1,32 +1,74 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getTankOperations, getMoneyCollections } from '../services/operationService';
-import { Wrench, RefreshCw, Trash2, DollarSign, Calendar } from 'lucide-react';
+import { getProfileDirectory } from '../services/profileService';
+import { useScopedMachines } from '../hooks/useScopedMachines';
+import { defaultRange } from '../services/_filters';
+import { DateRangeFilter, FilterBar, MachineFilter, SelectFilter } from '../components/ui/Filters';
+import { ErrorState, LoadingState } from '../components/ui/Primitives';
+import { Wrench, RefreshCw, Trash2, DollarSign } from 'lucide-react';
+
+const initialRange = () => ({ ...defaultRange(90), preset: '90d' });
 
 export const Operations = () => {
+  const { machines, scopeFor, loading: loadingMachines } = useScopedMachines();
+
   const [operations, setOperations] = useState([]);
   const [collections, setCollections] = useState([]);
+  const [directory, setDirectory] = useState(new Map());
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('tanks');
 
-  useEffect(() => {
-    loadOperationsData();
-  }, []);
+  const [machineId, setMachineId] = useState(null);
+  const [operationType, setOperationType] = useState(null);
+  const [range, setRange] = useState(initialRange);
 
-  const loadOperationsData = async () => {
+  // Antes esta página traía el histórico completo sin respetar
+  // assigned_machine_ids: un técnico veía operaciones de máquinas ajenas.
+  const filters = useMemo(
+    () => ({
+      machineIds: scopeFor(machineId),
+      operationType,
+      from: range.from,
+      to: range.to,
+    }),
+    [scopeFor, machineId, operationType, range.from, range.to]
+  );
+
+  const loadOperationsData = useCallback(async () => {
+    if (loadingMachines) return;
     setLoading(true);
+    setError(null);
     try {
       const [opData, mcData] = await Promise.all([
-        getTankOperations(),
-        getMoneyCollections()
+        getTankOperations(filters),
+        getMoneyCollections({ ...filters, operationType: undefined }),
       ]);
       setOperations(opData);
       setCollections(mcData);
     } catch (err) {
-      console.error('Error al cargar operaciones técnicas:', err);
+      setError(err);
+      setOperations([]);
+      setCollections([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, loadingMachines]);
+
+  useEffect(() => {
+    loadOperationsData();
+  }, [loadOperationsData]);
+
+  useEffect(() => {
+    getProfileDirectory()
+      .then(setDirectory)
+      .catch(() => setDirectory(new Map()));
+  }, []);
+
+  const personName = (id) =>
+    (id && (directory.get(id)?.full_name || directory.get(id)?.email)) || '—';
+
+  const activeCount = (machineId ? 1 : 0) + (operationType ? 1 : 0) + (range.preset !== '90d' ? 1 : 0);
 
   return (
     <div className="space-y-6">
@@ -35,6 +77,30 @@ export const Operations = () => {
         <h2 className="text-2xl font-black text-white tracking-tight">Operaciones & Mantenimiento Técnico</h2>
         <p className="text-xs text-slate-400 mt-0.5">Auditoría de recargas de líquido, purgas de tanques y retiros de efectivo</p>
       </div>
+
+      <FilterBar
+        activeCount={activeCount}
+        onReset={() => {
+          setMachineId(null);
+          setOperationType(null);
+          setRange(initialRange());
+        }}
+      >
+        <MachineFilter machines={machines} value={machineId} onChange={setMachineId} />
+        {activeTab === 'tanks' && (
+          <SelectFilter
+            label="Tipo de operación"
+            value={operationType}
+            onChange={setOperationType}
+            allLabel="Recargas y purgas"
+            options={[
+              { value: 'refill', label: 'Sólo recargas' },
+              { value: 'purge', label: 'Sólo purgas' },
+            ]}
+          />
+        )}
+        <DateRangeFilter value={range} onChange={setRange} />
+      </FilterBar>
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
@@ -69,13 +135,16 @@ export const Operations = () => {
                   <th className="p-4">Tanque & Producto</th>
                   <th className="p-4">Nivel Previo → Posterior</th>
                   <th className="p-4">Neto Litros</th>
+                  <th className="p-4">Técnico</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-medium">
-                {loading ? (
-                  <tr><td colSpan="6" className="p-8 text-center text-slate-400">Cargando historial técnico...</td></tr>
+                {loading || loadingMachines ? (
+                  <tr><td colSpan="7"><LoadingState label="Cargando historial técnico…" /></td></tr>
+                ) : error ? (
+                  <tr><td colSpan="7"><ErrorState error={error} onRetry={loadOperationsData} compact /></td></tr>
                 ) : operations.length === 0 ? (
-                  <tr><td colSpan="6" className="p-8 text-center text-slate-400">No hay operaciones registradas.</td></tr>
+                  <tr><td colSpan="7" className="p-8 text-center text-slate-400">No hay operaciones registradas.</td></tr>
                 ) : (
                   operations.map((op) => (
                     <tr key={op.id} className="hover:bg-slate-800/40 transition-colors">
@@ -93,7 +162,7 @@ export const Operations = () => {
                         </span>
                       </td>
                       <td className="p-4 font-bold text-white">
-                        {op.machine?.name || 'Expendedora Central'}
+                        {op.machine?.name || '—'}
                       </td>
                       <td className="p-4">
                         <span className="font-semibold text-brand-300">T#{op.tank_number}: </span>
@@ -105,6 +174,7 @@ export const Operations = () => {
                       <td className={`p-4 font-bold ${Number(op.net_liters || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {Number(op.net_liters || (op.tank_liters_after - op.tank_liters_before)).toFixed(2)} L
                       </td>
+                      <td className="p-4 text-slate-300">{personName(op.technician_user_id)}</td>
                     </tr>
                   ))
                 )}
@@ -125,14 +195,17 @@ export const Operations = () => {
                   <th className="p-4">Máquina</th>
                   <th className="p-4">Monto Recolectado</th>
                   <th className="p-4">Tipo Moneda</th>
+                  <th className="p-4">Responsable</th>
                   <th className="p-4">Notas / Observaciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-medium">
-                {loading ? (
-                  <tr><td colSpan="5" className="p-8 text-center text-slate-400">Cargando recolecciones...</td></tr>
+                {loading || loadingMachines ? (
+                  <tr><td colSpan="6"><LoadingState label="Cargando cortes de caja…" /></td></tr>
+                ) : error ? (
+                  <tr><td colSpan="6"><ErrorState error={error} onRetry={loadOperationsData} compact /></td></tr>
                 ) : collections.length === 0 ? (
-                  <tr><td colSpan="5" className="p-8 text-center text-slate-400">No hay cortes de caja registrados.</td></tr>
+                  <tr><td colSpan="6" className="p-8 text-center text-slate-400">No hay cortes de caja registrados.</td></tr>
                 ) : (
                   collections.map((col) => (
                     <tr key={col.id} className="hover:bg-slate-800/40 transition-colors">
@@ -140,13 +213,14 @@ export const Operations = () => {
                         {new Date(col.created_at).toLocaleString('es-MX')}
                       </td>
                       <td className="p-4 font-bold text-white">
-                        {col.machine?.name || 'Expendedora Central'}
+                        {col.machine?.name || '—'}
                       </td>
                       <td className="p-4 font-extrabold text-emerald-400 text-sm">
                         ${Number(col.amount_collected).toFixed(2)} MXN
                       </td>
                       <td className="p-4 text-slate-300 capitalize">{col.payment_type}</td>
-                      <td className="p-4 text-slate-400 max-w-xs truncate">{col.notes || '-'}</td>
+                      <td className="p-4 text-slate-300">{personName(col.collector_user_id)}</td>
+                      <td className="p-4 text-slate-400 max-w-xs truncate">{col.notes || '—'}</td>
                     </tr>
                   ))
                 )}

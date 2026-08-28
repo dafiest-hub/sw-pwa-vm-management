@@ -1,171 +1,358 @@
-import React, { useEffect, useState } from 'react';
-import { getSalesHistory, getSaleIncomes } from '../services/salesService';
-import { DollarSign, CreditCard, Coins, CheckCircle, Search, Calendar, Gauge } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Coins, Download, Gauge, Receipt, TrendingUp } from 'lucide-react';
+import { getSalesWithPayments, getSaleIncomes } from '../services/salesService';
+import { getProducts } from '../services/productService';
+import { useScopedMachines } from '../hooks/useScopedMachines';
+import { defaultRange } from '../services/_filters';
+import { DataTable } from '../components/ui/DataTable';
+import { Badge, EmptyState, MachineChip } from '../components/ui/Primitives';
+import { PaymentBadge, PaymentBreakdown } from '../components/ui/PaymentBadge';
+import {
+  DateRangeFilter,
+  FilterBar,
+  MachineFilter,
+  ProductFilter,
+  SelectFilter,
+} from '../components/ui/Filters';
+import {
+  formatDateTime,
+  formatLiters,
+  formatMoney,
+  paymentTypeLabel,
+  PAYMENT_TYPES,
+} from '../lib/format';
+
+const initialRange = () => ({ ...defaultRange(30), preset: '30d' });
 
 export const Sales = () => {
+  const { machines, scopeFor, loading: loadingMachines } = useScopedMachines();
+
+  const [tab, setTab] = useState('sales');
+  const [range, setRange] = useState(initialRange);
+  const [machineId, setMachineId] = useState(null);
+  const [productId, setProductId] = useState(null);
+  const [paymentType, setPaymentType] = useState(null);
+  const [status, setStatus] = useState(null);
+
+  const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
   const [incomes, setIncomes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('sales');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadSalesData();
+    getProducts()
+      .then(setProducts)
+      .catch(() => setProducts([]));
   }, []);
 
-  const loadSalesData = async () => {
+  const filters = useMemo(
+    () => ({
+      machineIds: scopeFor(machineId),
+      productId,
+      from: range.from,
+      to: range.to,
+      status,
+      pageSize: 500,
+    }),
+    [scopeFor, machineId, productId, range.from, range.to, status]
+  );
+
+  const load = useCallback(async () => {
+    if (loadingMachines) return;
     setLoading(true);
+    setError(null);
     try {
-      const [salesData, incomesData] = await Promise.all([
-        getSalesHistory(),
-        getSaleIncomes()
+      const [s, i] = await Promise.all([
+        getSalesWithPayments(filters),
+        getSaleIncomes({ ...filters, productId: undefined, status: undefined }),
       ]);
-      setSales(salesData);
-      setIncomes(incomesData);
-    } catch (err) {
-      console.error('Error al cargar historial de ventas:', err);
+      setSales(s);
+      setIncomes(i);
+    } catch (e) {
+      setError(e);
+      setSales([]);
+      setIncomes([]);
     } finally {
       setLoading(false);
     }
+  }, [filters, loadingMachines]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // El filtro por medio de pago se aplica DESPUÉS del cruce: sólo entonces se
+  // sabe con qué se pagó cada venta.
+  const visibleSales = useMemo(
+    () =>
+      paymentType
+        ? sales.filter((s) => s.payment_summary.methods.includes(paymentType))
+        : sales,
+    [sales, paymentType]
+  );
+
+  const visibleIncomes = useMemo(
+    () => (paymentType ? incomes.filter((i) => i.payment_type === paymentType) : incomes),
+    [incomes, paymentType]
+  );
+
+  const totals = useMemo(() => {
+    const ok = visibleSales.filter((s) => s.status === 'success');
+    return {
+      count: visibleSales.length,
+      ok: ok.length,
+      failed: visibleSales.length - ok.length,
+      revenue: ok.reduce((a, s) => a + Number(s.price_paid || 0), 0),
+      liters: ok.reduce((a, s) => a + Number(s.liters_purchased || 0), 0),
+      income: visibleIncomes.reduce((a, i) => a + Number(i.amount || 0), 0),
+    };
+  }, [visibleSales, visibleIncomes]);
+
+  const activeCount =
+    (machineId ? 1 : 0) +
+    (productId ? 1 : 0) +
+    (paymentType ? 1 : 0) +
+    (status ? 1 : 0) +
+    (range.preset !== '30d' ? 1 : 0);
+
+  const resetFilters = () => {
+    setMachineId(null);
+    setProductId(null);
+    setPaymentType(null);
+    setStatus(null);
+    setRange(initialRange());
   };
 
-  const getPaymentIcon = (type) => {
-    switch (type) {
-      case 'monedas': return <Coins className="w-4 h-4 text-brand-400" />;
-      case 'efectivo': return <DollarSign className="w-4 h-4 text-emerald-400" />;
-      case 'tarjeta': return <CreditCard className="w-4 h-4 text-purple-400" />;
-      default: return <DollarSign className="w-4 h-4 text-slate-400" />;
-    }
+  const exportCsv = () => {
+    const rows = visibleSales.map((s) => [
+      formatDateTime(s.created_at),
+      s.machine?.name || '',
+      s.machine?.device_id || '',
+      s.tank_number,
+      s.product?.name || '',
+      s.price_paid,
+      s.liters_purchased,
+      s.liters_flow_sensor,
+      s.status,
+      s.tx_id ?? '',
+      s.payment_summary.label,
+      s.payment_summary.amount,
+    ]);
+    const header = [
+      'Fecha', 'Máquina', 'Device ID', 'Tanque', 'Producto', 'Cobrado',
+      'Litros solicitados', 'Litros medidor', 'Estado', 'tx_id',
+      'Método de pago', 'Ingresado',
+    ];
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ventas-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
+
+  const saleColumns = [
+    { id: 'fecha', header: 'Fecha y hora', accessor: (s) => <span className="text-content-secondary whitespace-nowrap">{formatDateTime(s.created_at)}</span> },
+    { id: 'maquina', header: 'Máquina', accessor: (s) => <MachineChip machine={s.machine} /> },
+    {
+      id: 'producto',
+      header: 'Tanque y producto',
+      accessor: (s) => (
+        <div className="min-w-0">
+          <span className="text-[10px] font-mono text-accent-soft">T{s.tank_number}</span>
+          <p className="text-content-secondary truncate">{s.product?.name || 'Sin producto'}</p>
+        </div>
+      ),
+    },
+    { id: 'pago', header: 'Método de pago', accessor: (s) => <PaymentBadge summary={s.payment_summary} /> },
+    { id: 'cobrado', header: 'Cobrado', align: 'right', accessor: (s) => <span className="font-bold text-emerald-300">{formatMoney(s.price_paid)}</span> },
+    { id: 'litros', header: 'Litros', align: 'right', hideBelow: 'md', accessor: (s) => <span className="text-content-secondary">{formatLiters(s.liters_purchased)}</span> },
+    {
+      id: 'medidor',
+      header: 'Medidor',
+      align: 'right',
+      hideBelow: 'lg',
+      accessor: (s) => {
+        const delta = Number(s.liters_flow_sensor || 0) - Number(s.liters_purchased || 0);
+        const off = Math.abs(delta) > 0.05;
+        return (
+          <span className={off ? 'text-amber-300 font-semibold' : 'text-content-muted'}>
+            {formatLiters(s.liters_flow_sensor, 4)}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'estado',
+      header: 'Estado',
+      accessor: (s) => (
+        <Badge tone={s.status === 'success' ? 'ok' : 'danger'}>
+          {s.status === 'success' ? 'Concretada' : 'Fallida'}
+        </Badge>
+      ),
+    },
+  ];
+
+  const incomeColumns = [
+    { id: 'fecha', header: 'Fecha y hora', accessor: (i) => <span className="text-content-secondary whitespace-nowrap">{formatDateTime(i.created_at)}</span> },
+    { id: 'maquina', header: 'Máquina', accessor: (i) => <MachineChip machine={i.machine} /> },
+    {
+      id: 'medio',
+      header: 'Medio de pago',
+      accessor: (i) => <Badge tone="accent">{paymentTypeLabel(i.payment_type)}</Badge>,
+    },
+    {
+      id: 'venta',
+      header: 'Venta asociada',
+      hideBelow: 'sm',
+      accessor: (i) =>
+        i.tx_id == null ? (
+          <span className="text-content-muted text-[10px]">Sin enlace</span>
+        ) : (
+          <span className="font-mono text-[10px] text-content-muted">tx {i.tx_id}</span>
+        ),
+    },
+    { id: 'monto', header: 'Ingresado', align: 'right', accessor: (i) => <span className="font-bold text-emerald-300">+{formatMoney(i.amount)}</span> },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
-        <h2 className="text-2xl font-black text-white tracking-tight">Ventas e Ingresos</h2>
-        <p className="text-xs text-slate-400 mt-0.5">Auditoría transaccional de dispensado y registro de dinero ingresado</p>
+        <h2 className="text-2xl font-black text-content tracking-tight">Ventas e ingresos</h2>
+        <p className="text-xs text-content-muted mt-0.5">
+          Auditoría de dispensado y de dinero recibido, enlazados por máquina y transacción
+        </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-        <button
-          onClick={() => setActiveTab('sales')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'sales' ? 'bg-brand-500/20 text-brand-300 border border-brand-500/30' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          Ventas y Dispensado ({sales.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('incomes')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'incomes' ? 'bg-brand-500/20 text-brand-300 border border-brand-500/30' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          Ingresos por Medio de Pago ({incomes.length})
-        </button>
+      <FilterBar activeCount={activeCount} onReset={resetFilters}>
+        <MachineFilter machines={machines} value={machineId} onChange={setMachineId} />
+        {tab === 'sales' && (
+          <ProductFilter products={products} value={productId} onChange={setProductId} />
+        )}
+        <SelectFilter
+          label="Medio de pago"
+          value={paymentType}
+          onChange={setPaymentType}
+          allLabel="Cualquier medio"
+          options={PAYMENT_TYPES.map((t) => ({ value: t, label: paymentTypeLabel(t) }))}
+        />
+        {tab === 'sales' && (
+          <SelectFilter
+            label="Estado"
+            value={status}
+            onChange={setStatus}
+            allLabel="Concretadas y fallidas"
+            options={[
+              { value: 'success', label: 'Sólo concretadas' },
+              { value: 'fail', label: 'Sólo fallidas' },
+            ]}
+          />
+        )}
+        <DateRangeFilter value={range} onChange={setRange} />
+      </FilterBar>
+
+      {/* Resumen del rango filtrado */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <SummaryTile icon={Receipt} label="Ventas" value={`${totals.ok} concretadas`} hint={totals.failed ? `${totals.failed} fallidas` : 'sin fallos'} tone={totals.failed ? 'warn' : 'ok'} />
+        <SummaryTile icon={TrendingUp} label="Importe de ventas" value={formatMoney(totals.revenue)} hint="sólo concretadas" />
+        <SummaryTile icon={Coins} label="Dinero ingresado" value={formatMoney(totals.income)} hint="registrado en la máquina" />
+        <SummaryTile icon={Gauge} label="Volumen surtido" value={formatLiters(totals.liters, 2)} hint="litros dispensados" />
       </div>
 
-      {/* Tabla Ventas */}
-      {activeTab === 'sales' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="p-4">Fecha y Hora</th>
-                  <th className="p-4">Máquina</th>
-                  <th className="p-4">Tanque & Producto</th>
-                  <th className="p-4">Monto Pagado</th>
-                  <th className="p-4">Litros Solicitados</th>
-                  <th className="p-4">Litros Medidor Flujo</th>
-                  <th className="p-4">Estado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
-                {loading ? (
-                  <tr><td colSpan="7" className="p-8 text-center text-slate-400">Cargando ventas...</td></tr>
-                ) : sales.length === 0 ? (
-                  <tr><td colSpan="7" className="p-8 text-center text-slate-400">No hay registro de ventas.</td></tr>
-                ) : (
-                  sales.map((sale) => (
-                    <tr key={sale.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="p-4 text-slate-300 whitespace-nowrap">
-                        {new Date(sale.created_at).toLocaleString('es-MX')}
-                      </td>
-                      <td className="p-4 font-bold text-white">
-                        {sale.machine_name || sale.machine?.name || 'Máquina'}
-                      </td>
-                      <td className="p-4">
-                        <span className="font-semibold text-brand-300">T#{sale.tank_number}: </span>
-                        <span className="text-slate-200">{sale.product?.name || 'Producto'}</span>
-                      </td>
-                      <td className="p-4 font-bold text-emerald-400">
-                        ${Number(sale.price_paid).toFixed(2)} MXN
-                      </td>
-                      <td className="p-4 text-slate-300">{Number(sale.liters_purchased).toFixed(3)} L</td>
-                      <td className="p-4 font-mono text-cyan-300 flex items-center gap-1">
-                        <Gauge className="w-3.5 h-3.5 text-slate-500" />
-                        {Number(sale.liters_flow_sensor).toFixed(4)} L
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                          sale.status === 'success' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        }`}>
-                          <CheckCircle className="w-3 h-3" />
-                          {sale.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {totals.income > totals.revenue && (
+        <p className="text-[11px] text-content-muted bg-surface-raised border border-line-subtle rounded-xl px-3 py-2">
+          El dinero ingresado supera al importe de ventas porque incluye el saldo introducido que
+          todavía no se ha gastado. No es un descuadre.
+        </p>
       )}
 
-      {/* Tabla Ingresos */}
-      {activeTab === 'incomes' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="p-4">Fecha y Hora</th>
-                  <th className="p-4">Máquina</th>
-                  <th className="p-4">Medio de Pago</th>
-                  <th className="p-4">Monto Ingresado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
-                {loading ? (
-                  <tr><td colSpan="4" className="p-8 text-center text-slate-400">Cargando ingresos...</td></tr>
-                ) : incomes.length === 0 ? (
-                  <tr><td colSpan="4" className="p-8 text-center text-slate-400">No hay registros de ingresos.</td></tr>
-                ) : (
-                  incomes.map((inc) => (
-                    <tr key={inc.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="p-4 text-slate-300 whitespace-nowrap">
-                        {new Date(inc.created_at).toLocaleString('es-MX')}
-                      </td>
-                      <td className="p-4 font-bold text-white">
-                        {inc.machine?.name || 'Máquina Central'}
-                      </td>
-                      <td className="p-4 flex items-center gap-2 font-semibold capitalize text-slate-200">
-                        {getPaymentIcon(inc.payment_type)}
-                        {inc.payment_type}
-                      </td>
-                      <td className="p-4 font-extrabold text-emerald-400 text-sm">
-                        +${Number(inc.amount).toFixed(2)} MXN
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+      <div className="flex items-center justify-between gap-2 border-b border-line-subtle pb-2">
+        <div className="flex items-center gap-2">
+          <TabButton active={tab === 'sales'} onClick={() => setTab('sales')}>
+            Ventas ({visibleSales.length})
+          </TabButton>
+          <TabButton active={tab === 'incomes'} onClick={() => setTab('incomes')}>
+            Ingresos ({visibleIncomes.length})
+          </TabButton>
         </div>
+        <button onClick={exportCsv} className="btn-secondary" disabled={!visibleSales.length}>
+          <Download className="w-3.5 h-3.5" /> CSV
+        </button>
+      </div>
+
+      {tab === 'sales' ? (
+        <DataTable
+          columns={saleColumns}
+          rows={visibleSales}
+          loading={loading || loadingMachines}
+          error={error}
+          onRetry={load}
+          empty={<EmptyState icon={Receipt} title="Sin ventas en este rango" description="Amplía el rango de fechas o quita algún filtro." />}
+          renderExpanded={(s) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-content-muted font-bold mb-2">
+                  Desglose del ingreso
+                </p>
+                <PaymentBreakdown payments={s.payments} />
+              </div>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <Detail label="Transacción">{s.tx_id ?? 'sin tx_id'}</Detail>
+                <Detail label="Total ingresado">{formatMoney(s.payment_summary.amount)}</Detail>
+                <Detail label="Nivel antes">{formatLiters(s.tank_liters_before)}</Detail>
+                <Detail label="Nivel después">{formatLiters(s.tank_liters_after)}</Detail>
+                <Detail label="Solicitado">{formatLiters(s.liters_purchased)}</Detail>
+                <Detail label="Medidor">{formatLiters(s.liters_flow_sensor, 4)}</Detail>
+              </dl>
+            </div>
+          )}
+        />
+      ) : (
+        <DataTable
+          columns={incomeColumns}
+          rows={visibleIncomes}
+          loading={loading || loadingMachines}
+          error={error}
+          onRetry={load}
+          empty={<EmptyState icon={Coins} title="Sin ingresos en este rango" />}
+        />
       )}
     </div>
   );
 };
+
+const TabButton = ({ active, onClick, children }) => (
+  <button
+    onClick={onClick}
+    className={`px-4 py-2 rounded-control text-xs font-bold transition-all ${
+      active
+        ? 'bg-accent/20 text-accent-soft border border-accent/30'
+        : 'text-content-muted hover:text-content'
+    }`}
+  >
+    {children}
+  </button>
+);
+
+const TONE_TEXT = { ok: 'text-emerald-300', warn: 'text-amber-300', danger: 'text-rose-300' };
+
+const SummaryTile = ({ icon: Icon, label, value, hint, tone }) => (
+  <div className="card p-4">
+    <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider font-bold text-content-muted">
+      <Icon className="w-3.5 h-3.5" /> {label}
+    </div>
+    <p className={`text-lg font-extrabold mt-1 ${TONE_TEXT[tone] || 'text-content'}`}>{value}</p>
+    {hint && <p className="text-[10px] text-content-faint">{hint}</p>}
+  </div>
+);
+
+const Detail = ({ label, children }) => (
+  <>
+    <dt className="text-content-muted">{label}</dt>
+    <dd className="text-content-secondary font-semibold font-mono">{children}</dd>
+  </>
+);

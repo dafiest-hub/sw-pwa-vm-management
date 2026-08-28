@@ -2,20 +2,24 @@
 <html lang="es" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#0369a1" />
-    <meta name="description" content="Sistema PWA de Gestión y Control de Máquinas Vending de Productos de Limpieza ESP32 LIMPIEZIOT" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/mask-icon.svg" color="#0F766E" />
+    <!-- maximum-scale/user-scalable bloqueaban el zoom: se retiran por accesibilidad -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0F766E" />
+    <meta name="description" content="Monitoreo y control de una red de máquinas expendedoras de productos de limpieza: tanques, ventas, caja y alertas." />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="LIMPIEZIOT Vending" />
+    <meta name="apple-mobile-web-app-title" content="LIMPIEZIOT" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <title>LIMPIEZIOT Vending Management | Control PWA</title>
+    <!-- El peso 900 se usa en varias páginas (font-black) y antes no se cargaba -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>LIMPIEZIOT · Control de Máquinas Expendedoras</title>
   </head>
-  <body class="bg-slate-900 text-slate-100 antialiased font-sans min-h-screen selection:bg-brand-500 selection:text-white">
+  <body class="bg-surface text-slate-100 antialiased font-sans min-h-screen selection:bg-brand-500 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

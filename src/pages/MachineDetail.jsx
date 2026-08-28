@@ -5,22 +5,28 @@ import { recordRefillOperation } from '../services/operationService';
 import { useAuth } from '../context/AuthContext';
 import { TankLevelGauge } from '../components/common/TankLevelGauge';
 import { SecurityBadge } from '../components/common/SecurityBadge';
-import { 
-  ArrowLeft, 
-  Cpu, 
-  MapPin, 
-  DollarSign, 
-  RefreshCw, 
-  Edit3, 
-  Check, 
-  X, 
+import {
+  ArrowLeft,
+  MapPin,
+  DollarSign,
+  RefreshCw,
+  Check,
   Activity,
-  Calendar
+  SlidersHorizontal,
 } from 'lucide-react';
+import { getLastConfigAck } from '../services/alertService';
+import { readPendingSync, publishTankConfig } from '../services/machineService';
+import { TankSettingsEditor, SyncStatusBadge } from '../components/machines/TankSettingsEditor';
+import { Modal } from '../components/ui/Modal';
+import { StatusPill, LoadingState, EmptyState } from '../components/ui/Primitives';
+import { useToast } from '../components/ui/Toast';
+import { formatDateTime, formatMoney } from '../lib/format';
+import { parseConfigAck } from '../lib/alerts';
 
 export const MachineDetail = () => {
   const { id } = useParams();
-  const { isTechnician, user } = useAuth();
+  const { isTechnician, isAdmin, user } = useAuth();
+  const toast = useToast();
   const [machine, setMachine] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,6 +39,11 @@ export const MachineDetail = () => {
   const [newPrice, setNewPrice] = useState('');
   const [priceSubmitting, setPriceSubmitting] = useState(false);
 
+  // Configuración conjunta de los 8 tanques
+  const [showSettings, setShowSettings] = useState(false);
+  const [sync, setSync] = useState(null);
+  const [lastAck, setLastAck] = useState(null);
+
   useEffect(() => {
     loadMachineData();
   }, [id]);
@@ -42,6 +53,12 @@ export const MachineDetail = () => {
     try {
       const data = await getMachineById(id);
       setMachine(data);
+
+      // No hay columna en la base que refleje "config pendiente": el aviso se
+      // conserva localmente y se contrasta con el último ACK real del equipo.
+      const pending = readPendingSync(id);
+      setSync(pending ? { status: 'pending', ...pending } : null);
+      setLastAck(await getLastConfigAck(id).catch(() => null));
     } catch (err) {
       console.error('Error al cargar detalle de máquina:', err);
     } finally {
@@ -65,10 +82,17 @@ export const MachineDetail = () => {
       setRefillLiters('');
       await loadMachineData();
     } catch (err) {
-      alert('Error al registrar la recarga: ' + err.message);
+      toast.error('No se pudo registrar la recarga: ' + err.message);
     } finally {
       setRefillSubmitting(false);
     }
+  };
+
+  const handleRetrySync = async () => {
+    const result = await publishTankConfig(machine.id, machine.device_id, machine.tanks);
+    setSync(result);
+    if (result.status === 'synced') toast.success('Configuración enviada a la máquina.');
+    else toast.error(`Sigue sin poder enviarse: ${result.error}`);
   };
 
   const handlePriceSubmit = async (e) => {
@@ -81,14 +105,14 @@ export const MachineDetail = () => {
       setNewPrice('');
       await loadMachineData();
     } catch (err) {
-      alert('Error al actualizar el precio: ' + err.message);
+      toast.error('No se pudo actualizar el precio: ' + err.message);
     } finally {
       setPriceSubmitting(false);
     }
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-slate-400 text-xs">Cargando telemetría de máquina...</div>;
+    return <LoadingState label="Cargando telemetría de la máquina…" />;
   }
 
   if (!machine) {
@@ -113,11 +137,8 @@ export const MachineDetail = () => {
               <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">
                 {machine.device_id}
               </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                machine.status === 'online' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-              }`}>
-                {machine.status}
-              </span>
+              <StatusPill status={machine.status} />
+              <SyncStatusBadge sync={sync} onRetry={handleRetrySync} />
             </div>
             <h2 className="text-2xl font-black text-white tracking-tight mt-1">{machine.name}</h2>
             <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
@@ -125,12 +146,16 @@ export const MachineDetail = () => {
               <span>{machine.location_address}</span>
             </div>
           </div>
-          <button 
-            onClick={loadMachineData}
-            className="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 flex items-center gap-2 transition-all active:scale-95"
-          >
-            <Activity className="w-4 h-4 text-brand-400" /> Refrescar Telemetría
-          </button>
+          <div className="self-start sm:self-auto flex flex-wrap gap-2">
+            {isTechnician && (
+              <button onClick={() => setShowSettings(true)} className="btn-primary">
+                <SlidersHorizontal className="w-4 h-4" /> Precios y niveles mínimos
+              </button>
+            )}
+            <button onClick={loadMachineData} className="btn-secondary">
+              <Activity className="w-4 h-4 text-accent-soft" /> Refrescar
+            </button>
+          </div>
         </div>
       </div>
 
@@ -268,6 +293,38 @@ export const MachineDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Configuración conjunta de los 8 tanques */}
+      <Modal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        size="xl"
+        icon={SlidersHorizontal}
+        title="Precios y niveles mínimos"
+        subtitle={`${machine.name} · ${machine.device_id}`}
+      >
+        {lastAck && (
+          <p className="text-[11px] text-content-muted mb-4">
+            Última confirmación recibida de la máquina: {formatDateTime(lastAck.created_at)}
+            {parseConfigAck(lastAck).status && ` · ${parseConfigAck(lastAck).status}`}
+          </p>
+        )}
+        {machine.tanks?.length ? (
+          <TankSettingsEditor
+            machine={machine}
+            tanks={machine.tanks}
+            onSaved={(result) => {
+              setSync(result.sync);
+              loadMachineData();
+            }}
+          />
+        ) : (
+          <EmptyState
+            title="Esta máquina no tiene tanques dados de alta"
+            description="Hay que crear las 8 filas de machine_tanks antes de poder configurar precios."
+          />
+        )}
+      </Modal>
     </div>
   );
 };

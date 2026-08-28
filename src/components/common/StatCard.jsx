@@ -1,36 +1,70 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-export const StatCard = ({ title, value, subtitle, icon: Icon, trend, color = 'blue' }) => {
-  const colorMap = {
-    blue: 'from-brand-500/10 to-brand-600/5 text-brand-400 border-brand-500/20',
-    emerald: 'from-emerald-500/10 to-emerald-600/5 text-emerald-400 border-emerald-500/20',
-    amber: 'from-amber-500/10 to-amber-600/5 text-amber-400 border-amber-500/20',
-    rose: 'from-rose-500/10 to-rose-600/5 text-rose-400 border-rose-500/20',
-    purple: 'from-purple-500/10 to-purple-600/5 text-purple-400 border-purple-500/20'
-  };
+/**
+ * Tarjeta de indicador. `tone` es semántico (antes era `color`, con nombres de
+ * paleta como "blue" o "purple" que ataban la tarjeta a un color concreto).
+ */
+const TONES = {
+  accent: {
+    box: 'from-accent/10 to-accent/5 border-accent/20',
+    icon: 'text-accent-soft',
+  },
+  ok: {
+    box: 'from-status-ok/10 to-status-ok/5 border-status-ok/20',
+    icon: 'text-emerald-400',
+  },
+  warn: {
+    box: 'from-status-warn/10 to-status-warn/5 border-status-warn/20',
+    icon: 'text-amber-400',
+  },
+  danger: {
+    box: 'from-status-danger/10 to-status-danger/5 border-status-danger/20',
+    icon: 'text-rose-400',
+  },
+  neutral: {
+    box: 'from-slate-500/10 to-slate-500/5 border-slate-500/20',
+    icon: 'text-slate-400',
+  },
+};
 
-  return (
-    <div className={`p-5 rounded-2xl bg-gradient-to-br border glass-panel-hover relative overflow-hidden ${colorMap[color] || colorMap.blue}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wider font-semibold text-slate-400">{title}</p>
-          <h3 className="text-2xl font-extrabold text-white mt-1">{value}</h3>
-          {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+export const StatCard = ({ title, value, subtitle, icon: Icon, trend, tone = 'accent', to }) => {
+  const t = TONES[tone] || TONES.accent;
+
+  const body = (
+    <div
+      className={`p-5 rounded-2xl bg-gradient-to-br border glass-panel-hover relative overflow-hidden h-full ${t.box}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-wider font-semibold text-content-muted">{title}</p>
+          <p className="text-2xl font-extrabold text-content mt-1 truncate">{value}</p>
+          {subtitle && <p className="text-[11px] text-content-muted mt-0.5">{subtitle}</p>}
+          {trend && (
+            <p
+              className={`text-[11px] font-semibold mt-1 ${trend.isPositive ? 'text-emerald-400' : 'text-rose-400'}`}
+            >
+              {trend.isPositive ? '↑' : '↓'} {trend.value}{' '}
+              <span className="text-content-muted font-normal">{trend.label}</span>
+            </p>
+          )}
         </div>
         {Icon && (
-          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-700/50 shadow-inner">
-            <Icon className="w-6 h-6" />
+          <div className="p-3 rounded-xl bg-surface-raised/60 border border-line-subtle shadow-inner flex-shrink-0">
+            <Icon className={`w-6 h-6 ${t.icon}`} />
           </div>
         )}
       </div>
-      {trend && (
-        <div className="mt-3 flex items-center gap-1 text-xs font-medium">
-          <span className={trend.isPositive ? 'text-emerald-400' : 'text-rose-400'}>
-            {trend.isPositive ? '↑' : '↓'} {trend.value}
-          </span>
-          <span className="text-slate-400">{trend.label}</span>
-        </div>
-      )}
     </div>
   );
+
+  return to ? (
+    <Link to={to} className="block h-full">
+      {body}
+    </Link>
+  ) : (
+    body
+  );
 };
+
+export default StatCard;
