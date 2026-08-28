@@ -10,7 +10,8 @@ import { Wrench, RefreshCw, Trash2, DollarSign } from 'lucide-react';
 const initialRange = () => ({ ...defaultRange(90), preset: '90d' });
 
 export const Operations = () => {
-  const { machines, scopeFor, loading: loadingMachines } = useScopedMachines();
+  const { machines, scopeFor, loading: loadingMachines, reload: reloadMachines } =
+    useScopedMachines();
 
   const [operations, setOperations] = useState([]);
   const [collections, setCollections] = useState([]);
@@ -59,11 +60,23 @@ export const Operations = () => {
     loadOperationsData();
   }, [loadOperationsData]);
 
-  useEffect(() => {
-    getProfileDirectory()
-      .then(setDirectory)
-      .catch(() => setDirectory(new Map()));
+  // `force` salta la caché de 5 minutos del directorio de perfiles.
+  const loadDirectory = useCallback(async (force = false) => {
+    try {
+      setDirectory(await getProfileDirectory({ force }));
+    } catch {
+      setDirectory(new Map());
+    }
   }, []);
+
+  useEffect(() => {
+    loadDirectory();
+  }, [loadDirectory]);
+
+  const refreshAll = useCallback(
+    () => Promise.all([reloadMachines(), loadDirectory(true), loadOperationsData()]),
+    [reloadMachines, loadDirectory, loadOperationsData]
+  );
 
   const personName = (id) =>
     (id && (directory.get(id)?.full_name || directory.get(id)?.email)) || '—';
@@ -77,7 +90,7 @@ export const Operations = () => {
         <h2 className="text-2xl font-black text-white tracking-tight">Operaciones & Mantenimiento Técnico</h2>
         <p className="text-xs text-slate-400 mt-0.5">Auditoría de recargas de líquido, purgas de tanques y retiros de efectivo</p>
         <div className="mt-3">
-          <RefreshButton onClick={loadOperationsData} loading={loading} />
+          <RefreshButton onClick={refreshAll} loading={loading || loadingMachines} />
         </div>
       </div>
 

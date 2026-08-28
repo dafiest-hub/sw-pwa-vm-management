@@ -25,7 +25,8 @@ import {
 const initialRange = () => ({ ...defaultRange(30), preset: '30d' });
 
 export const Sales = () => {
-  const { machines, scopeFor, loading: loadingMachines } = useScopedMachines();
+  const { machines, scopeFor, loading: loadingMachines, reload: reloadMachines } =
+    useScopedMachines();
 
   const [tab, setTab] = useState('sales');
   const [range, setRange] = useState(initialRange);
@@ -40,11 +41,17 @@ export const Sales = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    getProducts()
-      .then(setProducts)
-      .catch(() => setProducts([]));
+  const loadProducts = useCallback(async () => {
+    try {
+      setProducts(await getProducts());
+    } catch {
+      setProducts([]);
+    }
   }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const filters = useMemo(
     () => ({
@@ -81,6 +88,12 @@ export const Sales = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Recarga todo lo que se ve en la página, no sólo la tabla.
+  const refreshAll = useCallback(
+    () => Promise.all([reloadMachines(), loadProducts(), load()]),
+    [reloadMachines, loadProducts, load]
+  );
 
   // El filtro por medio de pago se aplica DESPUÉS del cruce: sólo entonces se
   // sabe con qué se pagó cada venta.
@@ -236,7 +249,7 @@ export const Sales = () => {
             Auditoría de dispensado y de dinero recibido, enlazados por máquina y transacción
           </p>
         </div>
-        <RefreshButton onClick={load} loading={loading} />
+        <RefreshButton onClick={refreshAll} loading={loading || loadingMachines} />
       </div>
 
       <FilterBar activeCount={activeCount} onReset={resetFilters}>

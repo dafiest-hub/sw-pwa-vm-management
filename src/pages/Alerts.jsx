@@ -32,7 +32,8 @@ const ICON_TONE = {
 
 export const Alerts = () => {
   const { isTechnician, user } = useAuth();
-  const { machines, scopeFor, loading: loadingMachines } = useScopedMachines();
+  const { machines, scopeFor, loading: loadingMachines, reload: reloadMachines } =
+    useScopedMachines();
   const toast = useToast();
 
   const [alerts, setAlerts] = useState([]);
@@ -79,11 +80,23 @@ export const Alerts = () => {
     load();
   }, [load]);
 
-  useEffect(() => {
-    getProfileDirectory()
-      .then(setDirectory)
-      .catch(() => setDirectory(new Map()));
+  // `force` salta la caché de 5 minutos del directorio de perfiles.
+  const loadDirectory = useCallback(async (force = false) => {
+    try {
+      setDirectory(await getProfileDirectory({ force }));
+    } catch {
+      setDirectory(new Map());
+    }
   }, []);
+
+  useEffect(() => {
+    loadDirectory();
+  }, [loadDirectory]);
+
+  const refreshAll = useCallback(
+    () => Promise.all([reloadMachines(), loadDirectory(true), load()]),
+    [reloadMachines, loadDirectory, load]
+  );
 
   const resolverName = (id) => directory.get(id)?.full_name || directory.get(id)?.email || null;
 
@@ -166,7 +179,7 @@ export const Alerts = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <RefreshButton onClick={load} loading={loading} />
+          <RefreshButton onClick={refreshAll} loading={loading || loadingMachines} />
         </div>
         {isTechnician && selected.size > 0 && (
           <button onClick={handleBulkResolve} disabled={busy === 'bulk'} className="btn-success">

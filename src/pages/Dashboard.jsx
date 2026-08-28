@@ -24,7 +24,13 @@ import {
 const initialRange = () => ({ ...defaultRange(30), preset: '30d' });
 
 export const Dashboard = () => {
-  const { machines, scopeFor, loading: loadingMachines, error: machinesError } = useScopedMachines();
+  const {
+    machines,
+    scopeFor,
+    loading: loadingMachines,
+    error: machinesError,
+    reload: reloadMachines,
+  } = useScopedMachines();
   const chart = useChartTheme();
 
   const [range, setRange] = useState(initialRange);
@@ -62,6 +68,17 @@ export const Dashboard = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  /**
+   * El botón de actualizar tiene que recargar TAMBIÉN las máquinas: el efectivo
+   * en monedero, el estado y la última señal salen de `machines`, no de las
+   * consultas de `load()`. Sin esto había que cambiar de página y volver para
+   * verlos frescos.
+   */
+  const refreshAll = useCallback(
+    () => Promise.all([reloadMachines(), load()]),
+    [reloadMachines, load]
+  );
 
   const onlineCount = machines.filter((m) => m.status === 'online').length;
 
@@ -144,7 +161,7 @@ export const Dashboard = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <DateRangeFilter value={range} onChange={setRange} />
-          <RefreshButton onClick={load} loading={loading} />
+          <RefreshButton onClick={refreshAll} loading={loading || loadingMachines} />
         </div>
       </div>
 
