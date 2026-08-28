@@ -4,7 +4,7 @@ import { getProfileDirectory } from '../services/profileService';
 import { useScopedMachines } from '../hooks/useScopedMachines';
 import { defaultRange } from '../services/_filters';
 import { DateRangeFilter, FilterBar, MachineFilter, SelectFilter } from '../components/ui/Filters';
-import { ErrorState, LoadingState } from '../components/ui/Primitives';
+import { ErrorState, LoadingState, RefreshButton } from '../components/ui/Primitives';
 import { Wrench, RefreshCw, Trash2, DollarSign } from 'lucide-react';
 
 const initialRange = () => ({ ...defaultRange(90), preset: '90d' });
@@ -76,6 +76,9 @@ export const Operations = () => {
       <div>
         <h2 className="text-2xl font-black text-white tracking-tight">Operaciones & Mantenimiento Técnico</h2>
         <p className="text-xs text-slate-400 mt-0.5">Auditoría de recargas de líquido, purgas de tanques y retiros de efectivo</p>
+        <div className="mt-3">
+          <RefreshButton onClick={loadOperationsData} loading={loading} />
+        </div>
       </div>
 
       <FilterBar

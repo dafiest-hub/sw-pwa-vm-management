@@ -5,7 +5,7 @@ import { getProfileDirectory } from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import { useScopedMachines } from '../hooks/useScopedMachines';
 import { useToast } from '../components/ui/Toast';
-import { Badge, EmptyState, ErrorState, LoadingState, MachineChip } from '../components/ui/Primitives';
+import { Badge, EmptyState, ErrorState, LoadingState, MachineChip, RefreshButton } from '../components/ui/Primitives';
 import { DateRangeFilter, FilterBar, MachineFilter, SelectFilter } from '../components/ui/Filters';
 import {
   ALERT_CATEGORY_META,
@@ -164,6 +164,9 @@ export const Alerts = () => {
           <p className="text-xs text-content-muted mt-0.5">
             Seguridad, bombas, nivel de tanque y fallos de dispensado, por máquina
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <RefreshButton onClick={load} loading={loading} />
         </div>
         {isTechnician && selected.size > 0 && (
           <button onClick={handleBulkResolve} disabled={busy === 'bulk'} className="btn-success">

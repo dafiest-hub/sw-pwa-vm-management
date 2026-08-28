@@ -5,7 +5,7 @@ import { getProducts } from '../services/productService';
 import { useScopedMachines } from '../hooks/useScopedMachines';
 import { defaultRange } from '../services/_filters';
 import { DataTable } from '../components/ui/DataTable';
-import { Badge, EmptyState, MachineChip } from '../components/ui/Primitives';
+import { Badge, EmptyState, MachineChip, Notice, RefreshButton } from '../components/ui/Primitives';
 import { PaymentBadge, PaymentBreakdown } from '../components/ui/PaymentBadge';
 import {
   DateRangeFilter,
@@ -108,6 +108,14 @@ export const Sales = () => {
       income: visibleIncomes.reduce((a, i) => a + Number(i.amount || 0), 0),
     };
   }, [visibleSales, visibleIncomes]);
+
+  // Señal de que sale_incomes no se está pudiendo leer (típicamente RLS):
+  // hay ventas enlazables pero no llegó ni un solo ingreso.
+  const sinIngresosLegibles =
+    !loading &&
+    !error &&
+    incomes.length === 0 &&
+    visibleSales.some((s) => s.payment_summary.state === 'missing');
 
   const activeCount =
     (machineId ? 1 : 0) +
@@ -221,11 +229,14 @@ export const Sales = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-black text-content tracking-tight">Ventas e ingresos</h2>
-        <p className="text-xs text-content-muted mt-0.5">
-          Auditoría de dispensado y de dinero recibido, enlazados por máquina y transacción
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-black text-content tracking-tight">Ventas e ingresos</h2>
+          <p className="text-xs text-content-muted mt-0.5">
+            Auditoría de dispensado y de dinero recibido, enlazados por máquina y transacción
+          </p>
+        </div>
+        <RefreshButton onClick={load} loading={loading} />
       </div>
 
       <FilterBar activeCount={activeCount} onReset={resetFilters}>
@@ -262,6 +273,15 @@ export const Sales = () => {
         <SummaryTile icon={Coins} label="Dinero ingresado" value={formatMoney(totals.income)} hint="registrado en la máquina" />
         <SummaryTile icon={Gauge} label="Volumen surtido" value={formatLiters(totals.liters, 2)} hint="litros dispensados" />
       </div>
+
+      {sinIngresosLegibles && (
+        <Notice tone="warn" title="No se está leyendo la tabla de ingresos">
+          Hay {visibleSales.length} venta{visibleSales.length !== 1 && 's'} con transacción registrada, pero no se
+          recuperó ningún ingreso de <code className="font-mono">sale_incomes</code>. Lo habitual es que esa tabla
+          tenga RLS activada sin una política de lectura para el rol <code className="font-mono">authenticated</code>.
+          Mientras tanto no se puede saber el medio de pago.
+        </Notice>
+      )}
 
       {totals.income > totals.revenue && (
         <p className="text-[11px] text-content-muted bg-surface-raised border border-line-subtle rounded-xl px-3 py-2">

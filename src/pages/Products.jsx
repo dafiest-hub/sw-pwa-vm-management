@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
 import { Modal } from '../components/ui/Modal';
 import { DataTable } from '../components/ui/DataTable';
-import { EmptyState } from '../components/ui/Primitives';
+import { EmptyState, RefreshButton } from '../components/ui/Primitives';
 import { FilterBar, SearchInput } from '../components/ui/Filters';
 import { formatMoney } from '../lib/format';
 
@@ -175,11 +175,14 @@ export const Products = () => {
             el precio que cobra cada máquina se ajusta en su ficha.
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <RefreshButton onClick={load} loading={loading} />
         {isAdmin && (
           <button onClick={openNew} className="btn-primary">
             <PackagePlus className="w-4 h-4" /> Nuevo producto
           </button>
         )}
+        </div>
       </div>
 
       <FilterBar activeCount={search ? 1 : 0} onReset={() => setSearch('')}>

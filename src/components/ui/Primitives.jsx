@@ -1,5 +1,30 @@
 import React from 'react';
-import { AlertTriangle, Inbox, RefreshCw, Cpu } from 'lucide-react';
+import { AlertTriangle, Inbox, RefreshCw, Cpu, Info } from 'lucide-react';
+
+/** Botón de recarga manual. Los datos llegan por MQTT y no hay realtime. */
+export const RefreshButton = ({ onClick, loading, label = 'Actualizar' }) => (
+  <button onClick={onClick} disabled={loading} className="btn-secondary" title="Volver a consultar los datos">
+    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+    <span className="hidden sm:inline">{loading ? 'Actualizando…' : label}</span>
+  </button>
+);
+
+/** Aviso informativo en línea. */
+export const Notice = ({ tone = 'info', title, children }) => {
+  const cls =
+    tone === 'warn'
+      ? 'bg-status-warn/10 border-status-warn/30 text-amber-200'
+      : 'bg-status-info/10 border-status-info/30 text-sky-200';
+  return (
+    <div className={`flex items-start gap-2 p-3 rounded-xl border text-xs ${cls}`}>
+      <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+      <div className="min-w-0">
+        {title && <p className="font-bold mb-0.5">{title}</p>}
+        <div className="opacity-90">{children}</div>
+      </div>
+    </div>
+  );
+};
 
 // ─── Badge ───────────────────────────────────────────────────────────────────
 

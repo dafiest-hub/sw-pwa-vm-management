@@ -12,7 +12,7 @@ import { getAlerts } from '../services/alertService';
 import { useScopedMachines } from '../hooks/useScopedMachines';
 import { defaultRange } from '../services/_filters';
 import { DateRangeFilter } from '../components/ui/Filters';
-import { Badge, EmptyState, ErrorState, LoadingState, MachineChip, StatusPill } from '../components/ui/Primitives';
+import { Badge, EmptyState, ErrorState, LoadingState, MachineChip, RefreshButton, StatusPill } from '../components/ui/Primitives';
 import { DataTable } from '../components/ui/DataTable';
 import { StatCard } from '../components/common/StatCard';
 import { alertCategoryMeta, alertMessage } from '../lib/alerts';
@@ -142,7 +142,10 @@ export const Dashboard = () => {
             Resultado del negocio y estado operativo de la red
           </p>
         </div>
-        <DateRangeFilter value={range} onChange={setRange} />
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangeFilter value={range} onChange={setRange} />
+          <RefreshButton onClick={load} loading={loading} />
+        </div>
       </div>
 
       {/* KPIs de negocio */}
