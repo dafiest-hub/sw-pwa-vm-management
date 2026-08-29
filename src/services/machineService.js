@@ -280,34 +280,61 @@ export const readPendingSync = getPendingSync;
  * a ninguna fila y `maybeSingle()` devuelve null —PostgREST NO da error—: por eso
  * se comprueba el resultado y se lanza un error explicativo en vez de dejar
  * creer que se guardó.
+ *
+ * El payload lleva EXACTAMENTE las dos columnas concedidas. `updated_at` no va:
+ * los privilegios de columna se evalúan antes que la RLS y basta con nombrar
+ * una columna no concedida para que el UPDATE entero muera con
+ * «permission denied for table machines» (42501) —el error habla de la tabla,
+ * no de la columna, y por eso despista—. Lo pone al día el trigger
+ * `machines_set_updated_at` (PASO 4.c del mismo archivo), que además no se
+ * puede falsear desde el cliente. Antes de añadir un campo aquí hay que ampliar
+ * el grant; `device_id` nunca, es la clave por la que el consumidor MQTT enlaza
+ * la telemetría.
  */
 export async function updateMachineInfo(machineId, { name, location_address }) {
   const nombre = String(name ?? '').trim();
   if (!nombre) throw new Error('El nombre de la máquina no puede quedar vacío.');
 
-  const updated = await mutate(
-    'machines.updateMachineInfo',
-    (sb) =>
-      sb
-        .from('machines')
-        .update({
+  let updated;
+  try {
+    updated = await mutate(
+      'machines.updateMachineInfo',
+      (sb) =>
+        sb
+          .from('machines')
+          .update({
+            name: nombre,
+            location_address: String(location_address ?? '').trim() || null,
+          })
+          .eq('id', machineId)
+          .select('id, name, location_address')
+          .maybeSingle(),
+      () => {
+        const m = sampleMachines.find((x) => x.id === machineId);
+        // El `updated_at` lo pone aquí el mock porque en la base lo pone el
+        // trigger `machines_set_updated_at`, no el cliente.
+        if (m) Object.assign(m, {
           name: nombre,
           location_address: String(location_address ?? '').trim() || null,
           updated_at: new Date().toISOString(),
-        })
-        .eq('id', machineId)
-        .select('id, name, location_address')
-        .maybeSingle(),
-    () => {
-      const m = sampleMachines.find((x) => x.id === machineId);
-      if (m) Object.assign(m, {
-        name: nombre,
-        location_address: String(location_address ?? '').trim() || null,
-        updated_at: new Date().toISOString(),
-      });
-      return m;
+        });
+        return m;
+      }
+    );
+  } catch (err) {
+    // 42501 aquí casi nunca es «no eres admin» —de eso se encarga la RLS, que
+    // devuelve cero filas sin error—: es que el UPDATE nombra una columna fuera
+    // del `grant update (name, location_address)`. El mensaje de Postgres habla
+    // de la tabla y despista. Ver .doc/RLS_MULTITENANT.sql, PASOS 4.b y 4.c.
+    if (err?.code === '42501') {
+      throw new Error(
+        'La base rechazó la escritura sobre `machines` (42501). Revisa que el ' +
+          'UPDATE mande sólo las columnas concedidas (name, location_address) ' +
+          'y que el grant del PASO 4.b siga aplicado.'
+      );
     }
-  );
+    throw err;
+  }
 
   if (!updated) {
     throw new Error(
