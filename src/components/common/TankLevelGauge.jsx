@@ -1,8 +1,8 @@
 import React from 'react';
-import { Droplet, AlertTriangle, ZapOff, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ZapOff } from 'lucide-react';
 import { productChipClass, liquidGradientClass } from '../../lib/tankColors';
 
-export const TankLevelGauge = ({ tank, onRefillClick, isTechnician }) => {
+export const TankLevelGauge = ({ tank }) => {
   const percentage = Math.min(100, Math.max(0, Number(tank.current_percentage || ((tank.current_liters / tank.capacity_liters) * 100).toFixed(1))));
 
   // El aviso de nivel bajo sale del umbral configurado del tanque
@@ -133,16 +133,6 @@ export const TankLevelGauge = ({ tank, onRefillClick, isTechnician }) => {
         </div>
       </div>
 
-      {/* Botón de Recarga / Purga para Técnicos */}
-      {isTechnician && onRefillClick && (
-        <button
-          onClick={() => onRefillClick(tank)}
-          className="w-full mt-2 py-2 px-3 rounded-xl bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 border border-brand-500/30 text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Registrar Recarga / Mantenimiento
-        </button>
-      )}
     </div>
   );
 };

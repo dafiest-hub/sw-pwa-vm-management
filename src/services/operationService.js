@@ -1,7 +1,6 @@
-import { query, mutate, IS_DEMO } from '../lib/dataAccess';
-import { supabase } from '../lib/supabaseClient';
+import { query } from '../lib/dataAccess';
 import { applyCommonFilters, applyPaging } from './_filters';
-import { sampleTankOperations, sampleMoneyCollections, sampleTanks } from '../mock/sampleData';
+import { sampleTankOperations, sampleMoneyCollections } from '../mock/sampleData';
 
 /**
  * NO se embebe `profiles`.
@@ -12,12 +11,12 @@ import { sampleTankOperations, sampleMoneyCollections, sampleTanks } from '../mo
  * mostraba datos de demostración creyendo que eran reales.
  *
  * Los nombres de técnico se resuelven aparte con profileService.
+ *
+ * Este módulo es de SÓLO LECTURA: el nivel de los tanques y las operaciones los
+ * publica la máquina, la PWA no los escribe (ver §14 de REDISENO_2026-08.md).
  */
 const OP_SELECT = '*, product:products (id, sku, name), machine:machines (id, name, device_id)';
 const COLLECTION_SELECT = '*, machine:machines (id, name, device_id)';
-
-/** current_liters lleva CHECK (>= 0) y no puede exceder la capacidad. */
-const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
 const byDateDesc = (a, b) => new Date(b.created_at) - new Date(a.created_at);
 
@@ -54,105 +53,4 @@ export async function getMoneyCollections(filters = {}) {
     },
     () => sampleMoneyCollections.filter((c) => matches(c, filters)).sort(byDateDesc)
   );
-}
-
-/**
- * Registra una recarga: lee el tanque, inserta la operación y actualiza el nivel.
- * No hay transacción; el orden elegido deja la operación auditada aunque falle
- * el update posterior (preferible a actualizar el nivel sin dejar rastro).
- *
- * `net_liters` es GENERATED: nunca se envía.
- */
-export async function recordRefillOperation({
-  machine_id,
-  tank_number,
-  product_id,
-  liters_added,
-  technician_id,
-}) {
-  if (IS_DEMO) {
-    const tank = sampleTanks.find(
-      (t) => t.machine_id === machine_id && t.tank_number === tank_number
-    );
-    if (!tank) throw new Error(`No se encontró el tanque ${tank_number} de esa máquina.`);
-    const before = Number(tank.current_liters);
-    const after = clamp(before + Number(liters_added), 0, Number(tank.capacity_liters));
-    Object.assign(tank, {
-      current_liters: after,
-      current_percentage: Number(((after / tank.capacity_liters) * 100).toFixed(2)),
-      is_above_minimum: after >= Number(tank.low_threshold_liters),
-      last_refill_at: new Date().toISOString(),
-    });
-    const op = {
-      id: `op-${Date.now()}`,
-      machine_id,
-      tank_number,
-      product_id,
-      operation_type: 'refill',
-      tank_liters_before: before,
-      tank_liters_after: after,
-      net_liters: Number((after - before).toFixed(3)),
-      technician_user_id: technician_id || null,
-      created_at: new Date().toISOString(),
-    };
-    sampleTankOperations.unshift(op);
-    return op;
-  }
-
-  const { data: tank, error: tankErr } = await supabase
-    .from('machine_tanks')
-    .select('*')
-    .eq('machine_id', machine_id)
-    .eq('tank_number', tank_number)
-    .maybeSingle();
-
-  if (tankErr) {
-    console.error(`[operations.recordRefill/read] ${tankErr.code} — ${tankErr.message}`);
-    throw tankErr;
-  }
-  if (!tank) throw new Error(`No se encontró el tanque ${tank_number} de esa máquina.`);
-
-  const before = Number(tank.current_liters);
-  const after = clamp(before + Number(liters_added), 0, Number(tank.capacity_liters));
-
-  const { data: op, error: opErr } = await supabase
-    .from('tank_operations')
-    .insert([
-      {
-        machine_id,
-        tank_number,
-        product_id: product_id || tank.product_id,
-        operation_type: 'refill',
-        tank_liters_before: before,
-        tank_liters_after: after,
-        technician_user_id: technician_id || null,
-      },
-    ])
-    .select()
-    .single();
-
-  if (opErr) {
-    console.error(`[operations.recordRefill/insert] ${opErr.code} — ${opErr.message}`);
-    throw opErr;
-  }
-
-  const { error: updErr } = await supabase
-    .from('machine_tanks')
-    .update({
-      current_liters: after,
-      is_above_minimum: after >= Number(tank.low_threshold_liters),
-      last_refill_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', tank.id);
-
-  if (updErr) {
-    console.error(
-      `[operations.recordRefill/update] ${updErr.code} — ${updErr.message}. ` +
-        'La operación quedó registrada pero el nivel del tanque no se actualizó.'
-    );
-    throw updErr;
-  }
-
-  return op;
 }
