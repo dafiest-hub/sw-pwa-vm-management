@@ -2,7 +2,7 @@ import React from 'react';
 import { Droplet, AlertTriangle, ZapOff, RefreshCw } from 'lucide-react';
 import { productChipClass, liquidGradientClass } from '../../lib/tankColors';
 
-export const TankLevelGauge = ({ tank, onRefillClick, onPriceEditClick, isTechnician }) => {
+export const TankLevelGauge = ({ tank, onRefillClick, isTechnician }) => {
   const percentage = Math.min(100, Math.max(0, Number(tank.current_percentage || ((tank.current_liters / tank.capacity_liters) * 100).toFixed(1))));
   const isLow = !tank.is_above_minimum || percentage < 20;
   const isPumpOk = tank.is_pump_working !== false;
@@ -93,20 +93,10 @@ export const TankLevelGauge = ({ tank, onRefillClick, onPriceEditClick, isTechni
             </div>
           </div>
 
-          {/* Precio por Litro */}
+          {/* Precio por Litro (se edita desde "Precios y niveles mínimos", nunca por tanque suelto) */}
           <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800/80">
             <span className="text-slate-400">Precio/Litro:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-bold text-emerald-400">${Number(tank.price_per_liter).toFixed(2)} MXN</span>
-              {isTechnician && onPriceEditClick && (
-                <button 
-                  onClick={() => onPriceEditClick(tank)}
-                  className="text-[10px] text-slate-400 hover:text-brand-400 underline ml-1"
-                >
-                  Editar
-                </button>
-              )}
-            </div>
+            <span className="font-bold text-emerald-400">${Number(tank.price_per_liter).toFixed(2)} MXN</span>
           </div>
         </div>
       </div>

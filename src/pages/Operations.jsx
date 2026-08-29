@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getTankOperations, getMoneyCollections } from '../services/operationService';
-import { getProfileDirectory } from '../services/profileService';
 import { useScopedMachines } from '../hooks/useScopedMachines';
 import { defaultRange } from '../services/_filters';
 import { DateRangeFilter, FilterBar, MachineFilter, SelectFilter } from '../components/ui/Filters';
@@ -15,7 +14,6 @@ export const Operations = () => {
 
   const [operations, setOperations] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [directory, setDirectory] = useState(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('tanks');
@@ -60,26 +58,10 @@ export const Operations = () => {
     loadOperationsData();
   }, [loadOperationsData]);
 
-  // `force` salta la caché de 5 minutos del directorio de perfiles.
-  const loadDirectory = useCallback(async (force = false) => {
-    try {
-      setDirectory(await getProfileDirectory({ force }));
-    } catch {
-      setDirectory(new Map());
-    }
-  }, []);
-
-  useEffect(() => {
-    loadDirectory();
-  }, [loadDirectory]);
-
   const refreshAll = useCallback(
-    () => Promise.all([reloadMachines(), loadDirectory(true), loadOperationsData()]),
-    [reloadMachines, loadDirectory, loadOperationsData]
+    () => Promise.all([reloadMachines(), loadOperationsData()]),
+    [reloadMachines, loadOperationsData]
   );
-
-  const personName = (id) =>
-    (id && (directory.get(id)?.full_name || directory.get(id)?.email)) || '—';
 
   const activeCount = (machineId ? 1 : 0) + (operationType ? 1 : 0) + (range.preset !== '90d' ? 1 : 0);
 
@@ -151,16 +133,15 @@ export const Operations = () => {
                   <th className="p-4">Tanque & Producto</th>
                   <th className="p-4">Nivel Previo → Posterior</th>
                   <th className="p-4">Neto Litros</th>
-                  <th className="p-4">Técnico</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-medium">
                 {loading || loadingMachines ? (
-                  <tr><td colSpan="7"><LoadingState label="Cargando historial técnico…" /></td></tr>
+                  <tr><td colSpan="6"><LoadingState label="Cargando historial técnico…" /></td></tr>
                 ) : error ? (
-                  <tr><td colSpan="7"><ErrorState error={error} onRetry={loadOperationsData} compact /></td></tr>
+                  <tr><td colSpan="6"><ErrorState error={error} onRetry={loadOperationsData} compact /></td></tr>
                 ) : operations.length === 0 ? (
-                  <tr><td colSpan="7" className="p-8 text-center text-slate-400">No hay operaciones registradas.</td></tr>
+                  <tr><td colSpan="6" className="p-8 text-center text-slate-400">No hay operaciones registradas.</td></tr>
                 ) : (
                   operations.map((op) => (
                     <tr key={op.id} className="hover:bg-slate-800/40 transition-colors">
@@ -190,7 +171,6 @@ export const Operations = () => {
                       <td className={`p-4 font-bold ${Number(op.net_liters || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {Number(op.net_liters || (op.tank_liters_after - op.tank_liters_before)).toFixed(2)} L
                       </td>
-                      <td className="p-4 text-slate-300">{personName(op.technician_user_id)}</td>
                     </tr>
                   ))
                 )}
@@ -211,17 +191,15 @@ export const Operations = () => {
                   <th className="p-4">Máquina</th>
                   <th className="p-4">Monto Recolectado</th>
                   <th className="p-4">Tipo Moneda</th>
-                  <th className="p-4">Responsable</th>
-                  <th className="p-4">Notas / Observaciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-medium">
                 {loading || loadingMachines ? (
-                  <tr><td colSpan="6"><LoadingState label="Cargando cortes de caja…" /></td></tr>
+                  <tr><td colSpan="4"><LoadingState label="Cargando cortes de caja…" /></td></tr>
                 ) : error ? (
-                  <tr><td colSpan="6"><ErrorState error={error} onRetry={loadOperationsData} compact /></td></tr>
+                  <tr><td colSpan="4"><ErrorState error={error} onRetry={loadOperationsData} compact /></td></tr>
                 ) : collections.length === 0 ? (
-                  <tr><td colSpan="6" className="p-8 text-center text-slate-400">No hay cortes de caja registrados.</td></tr>
+                  <tr><td colSpan="4" className="p-8 text-center text-slate-400">No hay cortes de caja registrados.</td></tr>
                 ) : (
                   collections.map((col) => (
                     <tr key={col.id} className="hover:bg-slate-800/40 transition-colors">
@@ -235,8 +213,6 @@ export const Operations = () => {
                         ${Number(col.amount_collected).toFixed(2)} MXN
                       </td>
                       <td className="p-4 text-slate-300 capitalize">{col.payment_type}</td>
-                      <td className="p-4 text-slate-300">{personName(col.collector_user_id)}</td>
-                      <td className="p-4 text-slate-400 max-w-xs truncate">{col.notes || '—'}</td>
                     </tr>
                   ))
                 )}

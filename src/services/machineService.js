@@ -74,24 +74,6 @@ export async function getMachineById(id) {
   return { ...normalized, tanks };
 }
 
-export async function updateTankPrice(tankId, newPrice) {
-  return mutate(
-    'machines.updateTankPrice',
-    (sb) =>
-      sb
-        .from('machine_tanks')
-        .update({ price_per_liter: Number(newPrice), updated_at: new Date().toISOString() })
-        .eq('id', tankId)
-        .select()
-        .maybeSingle(),
-    () => {
-      const t = sampleTanks.find((x) => x.id === tankId);
-      if (t) t.price_per_liter = Number(newPrice);
-      return t;
-    }
-  );
-}
-
 /**
  * Guarda precio y nivel mínimo de los 8 tanques de una máquina y publica la
  * configuración al equipo.
@@ -109,15 +91,20 @@ export async function updateTankPrice(tankId, newPrice) {
  * pendiente de sincronizar.
  */
 export async function saveMachineTankSettings(machineId, tanks, { deviceId } = {}) {
+  // El firmware descarta en silencio price_per_liter/low_threshold_liters <= 0 y
+  // la función de publicación responde 400. Si dejáramos pasar un 0 se guardaría
+  // en machine_tanks pero nunca llegaría al equipo: la base y la máquina
+  // quedarían discrepantes y la máquina «Pendiente de sincronizar» para siempre,
+  // con el reintento manual fallando igual. Por eso aquí es > 0, no >= 0.
   const invalid = tanks.find(
     (t) =>
-      !(Number(t.price_per_liter) >= 0) ||
-      !(Number(t.low_threshold_liters) >= 0) ||
+      !(Number(t.price_per_liter) > 0) ||
+      !(Number(t.low_threshold_liters) > 0) ||
       Number(t.low_threshold_liters) > Number(t.capacity_liters)
   );
   if (invalid) {
     throw new Error(
-      `Tanque ${invalid.tank_number}: el precio debe ser mayor o igual a 0 y el nivel mínimo no puede superar la capacidad (${invalid.capacity_liters} L).`
+      `Tanque ${invalid.tank_number}: el precio y el nivel mínimo deben ser mayores que 0 (el firmware no admite 0) y el nivel mínimo no puede superar la capacidad (${invalid.capacity_liters} L).`
     );
   }
 

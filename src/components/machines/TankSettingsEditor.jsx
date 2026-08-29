@@ -46,14 +46,20 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
     [rows]
   );
 
+  // El firmware descarta cualquier valor <= 0 y la función de publicación
+  // responde 400. Si se aceptara un 0 el valor se guardaría en base pero jamás
+  // llegaría al equipo: la máquina quedaría «Pendiente de sincronizar» de forma
+  // permanente. Se bloquea aquí, antes de tocar la base de datos.
   const problems = useMemo(
     () =>
       rows
         .map((r) => {
           const p = Number(r.price_per_liter);
           const m = Number(r.low_threshold_liters);
-          if (!Number.isFinite(p) || p < 0) return `T${r.tank_number}: precio inválido`;
-          if (!Number.isFinite(m) || m < 0) return `T${r.tank_number}: nivel mínimo inválido`;
+          if (r.price_per_liter === '' || !Number.isFinite(p) || p <= 0)
+            return `T${r.tank_number}: el precio debe ser mayor que 0 (el firmware no admite 0)`;
+          if (r.low_threshold_liters === '' || !Number.isFinite(m) || m <= 0)
+            return `T${r.tank_number}: el nivel mínimo debe ser mayor que 0 (el firmware no admite 0)`;
           if (m > r.capacity_liters)
             return `T${r.tank_number}: el mínimo (${m} L) supera la capacidad (${r.capacity_liters} L)`;
           return null;
@@ -116,7 +122,7 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
           <input
             type="number"
             step="0.01"
-            min="0"
+            min="0.01"
             className="input w-24"
             value={bulkPrice}
             onChange={(e) => setBulkPrice(e.target.value)}
@@ -128,7 +134,7 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
           <input
             type="number"
             step="0.1"
-            min="0"
+            min="0.1"
             className="input w-24"
             value={bulkMin}
             onChange={(e) => setBulkMin(e.target.value)}
@@ -170,7 +176,7 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
                     <input
                       type="number"
                       step="0.01"
-                      min="0"
+                      min="0.01"
                       aria-label={`Precio del tanque ${r.tank_number}`}
                       className="input w-24 text-right"
                       value={r.price_per_liter}
@@ -181,7 +187,7 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
                     <input
                       type="number"
                       step="0.1"
-                      min="0"
+                      min="0.1"
                       max={r.capacity_liters}
                       aria-label={`Nivel mínimo del tanque ${r.tank_number}`}
                       className="input w-24 text-right"
@@ -213,7 +219,9 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
         Al guardar se envían <strong>los 8 tanques a la vez</strong>: el firmware no admite
         actualizaciones parciales. La máquina guarda la configuración y{' '}
         <strong>se reinicia unos 5 segundos después</strong>, por lo que quedará fuera de línea un
-        momento.
+        momento. El precio y el nivel mínimo deben ser{' '}
+        <strong>mayores que 0</strong>: el firmware no admite 0 y la máquina quedaría pendiente de
+        sincronizar de forma permanente.
       </p>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
