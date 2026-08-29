@@ -1,4 +1,4 @@
-import { query, IS_DEMO } from '../lib/dataAccess';
+import { query, mutate, IS_DEMO } from '../lib/dataAccess';
 import { supabase } from '../lib/supabaseClient';
 import { markPendingSync, clearPendingSync, getPendingSync } from '../lib/pendingSync';
 import { sampleMachines, sampleMachineStatus, sampleTanks } from '../mock/sampleData';
@@ -205,6 +205,52 @@ export async function publishTankConfig(machineId, deviceId, tanks) {
 }
 
 export const readPendingSync = getPendingSync;
+
+/**
+ * Renombra una máquina y/o cambia su ubicación. Es lo ÚNICO editable de la ficha
+ * desde la PWA: `device_id`, `status` y `firmware_version` los publica el propio
+ * equipo, y el alta sigue siendo cosa de la base.
+ *
+ * Requiere la política RLS «Edición de ficha de máquina»
+ * (.doc/RLS_MULTITENANT.sql, PASO 4). Sin ella el UPDATE no afecta a ninguna
+ * fila y `maybeSingle()` devuelve null: por eso se comprueba el resultado y se
+ * lanza un error explicativo en vez de dejar creer que se guardó.
+ */
+export async function updateMachineInfo(machineId, { name, location_address }) {
+  const nombre = String(name ?? '').trim();
+  if (!nombre) throw new Error('El nombre de la máquina no puede quedar vacío.');
+
+  const updated = await mutate(
+    'machines.updateMachineInfo',
+    (sb) =>
+      sb
+        .from('machines')
+        .update({
+          name: nombre,
+          location_address: String(location_address ?? '').trim() || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', machineId)
+        .select('id, name, location_address')
+        .maybeSingle(),
+    () => {
+      const m = sampleMachines.find((x) => x.id === machineId);
+      if (m) Object.assign(m, {
+        name: nombre,
+        location_address: String(location_address ?? '').trim() || null,
+        updated_at: new Date().toISOString(),
+      });
+      return m;
+    }
+  );
+
+  if (!updated) {
+    throw new Error(
+      'No se guardó ningún cambio: tu cuenta no tiene permiso para editar esta máquina.'
+    );
+  }
+  return updated;
+}
 
 /*
  * Aquí vivía `createMachine()`. El alta de máquinas sale de la PWA a propósito:

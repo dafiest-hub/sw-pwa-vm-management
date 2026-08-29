@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getMachineById } from '../services/machineService';
+import { getMachineById, updateMachineInfo } from '../services/machineService';
 import { useAuth } from '../context/AuthContext';
 import { TankLevelGauge } from '../components/common/TankLevelGauge';
 import { SecurityBadge } from '../components/common/SecurityBadge';
@@ -9,6 +9,8 @@ import {
   MapPin,
   Activity,
   SlidersHorizontal,
+  Pencil,
+  Save,
 } from 'lucide-react';
 import { getLastConfigAck } from '../services/alertService';
 import { readPendingSync, publishTankConfig } from '../services/machineService';
@@ -25,6 +27,11 @@ export const MachineDetail = () => {
   const toast = useToast();
   const [machine, setMachine] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Edición de la ficha (nombre y ubicación)
+  const [showEdit, setShowEdit] = useState(false);
+  const [form, setForm] = useState({ name: '', location_address: '' });
+  const [savingInfo, setSavingInfo] = useState(false);
 
   // Configuración conjunta de los 8 tanques
   const [showSettings, setShowSettings] = useState(false);
@@ -50,6 +57,30 @@ export const MachineDetail = () => {
       console.error('Error al cargar detalle de máquina:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openEdit = () => {
+    setForm({
+      name: machine.name || '',
+      location_address: machine.location_address || '',
+    });
+    setShowEdit(true);
+  };
+
+  const handleSaveInfo = async (e) => {
+    e.preventDefault();
+    setSavingInfo(true);
+    try {
+      const updated = await updateMachineInfo(machine.id, form);
+      // Se refleja al momento en vez de esperar a la recarga completa.
+      setMachine((prev) => ({ ...prev, ...updated }));
+      setShowEdit(false);
+      toast.success('Ficha de la máquina actualizada.');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSavingInfo(false);
     }
   };
 
@@ -97,6 +128,11 @@ export const MachineDetail = () => {
           </div>
           <div className="self-start sm:self-auto flex flex-wrap gap-2">
             {isTechnician && (
+              <button onClick={openEdit} className="btn-secondary">
+                <Pencil className="w-4 h-4 text-accent-soft" /> Editar ficha
+              </button>
+            )}
+            {isTechnician && (
               <button onClick={() => setShowSettings(true)} className="btn-primary">
                 <SlidersHorizontal className="w-4 h-4" /> Precios y niveles mínimos
               </button>
@@ -132,6 +168,71 @@ export const MachineDetail = () => {
           <p className="col-span-full text-center py-6 text-slate-400 text-xs">No hay tanques configurados para esta máquina.</p>
         )}
       </div>
+
+      {/* Ficha de la máquina. `device_id`, estado y versión los publica el equipo:
+          aquí sólo se edita lo que es información de gestión. */}
+      <Modal
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+        icon={Pencil}
+        title="Editar ficha de la máquina"
+        subtitle={machine.device_id}
+      >
+        <form onSubmit={handleSaveInfo} className="space-y-4">
+          <div>
+            <label htmlFor="machine-name" className="block text-xs font-semibold text-content-secondary mb-1">
+              Nombre
+            </label>
+            <input
+              id="machine-name"
+              type="text"
+              required
+              maxLength={120}
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="Ej. Expendedora Plaza Central"
+              className="input w-full"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="machine-location" className="block text-xs font-semibold text-content-secondary mb-1">
+              Ubicación
+            </label>
+            <input
+              id="machine-location"
+              type="text"
+              maxLength={250}
+              value={form.location_address}
+              onChange={(e) => setForm((f) => ({ ...f, location_address: e.target.value }))}
+              placeholder="Ej. Av. Reforma 120, junto a recepción"
+              className="input w-full"
+            />
+            <p className="text-[10px] text-content-faint mt-1">
+              Sirve para localizarla en una visita; puede dejarse vacía.
+            </p>
+          </div>
+
+          <p className="text-[11px] text-content-muted bg-surface-sunken border border-line-subtle rounded-xl px-3 py-2">
+            El identificador <strong>{machine.device_id}</strong>, el estado y la versión los publica la
+            propia máquina y no se editan desde aquí.
+          </p>
+
+          <div className="flex gap-2 pt-2 border-t border-line-subtle">
+            <button type="button" onClick={() => setShowEdit(false)} className="btn-secondary flex-1">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={savingInfo || !form.name.trim()}
+              className="btn-primary flex-1"
+            >
+              <Save className="w-4 h-4" />
+              {savingInfo ? 'Guardando…' : 'Guardar cambios'}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Configuración conjunta de los 8 tanques */}
       <Modal
