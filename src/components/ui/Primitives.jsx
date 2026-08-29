@@ -137,7 +137,7 @@ export const ErrorState = ({ error, onRetry, compact = false }) => {
         </p>
         {(code || hint) && (
           <p className="text-[10px] font-mono text-content-faint mt-2">
-            {code && `código ${code}`}
+            {code && `referencia ${code}`}
             {code && hint && ' · '}
             {hint}
           </p>

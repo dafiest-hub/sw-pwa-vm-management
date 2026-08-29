@@ -288,11 +288,11 @@ export const Sales = () => {
       </div>
 
       {sinIngresosLegibles && (
-        <Notice tone="warn" title="No se está leyendo la tabla de ingresos">
-          Hay {visibleSales.length} venta{visibleSales.length !== 1 && 's'} con transacción registrada, pero no se
-          recuperó ningún ingreso de <code className="font-mono">sale_incomes</code>. Lo habitual es que esa tabla
-          tenga RLS activada sin una política de lectura para el rol <code className="font-mono">authenticated</code>.
-          Mientras tanto no se puede saber el medio de pago.
+        <Notice tone="warn" title="No se están recibiendo los cobros">
+          Hay {visibleSales.length} venta{visibleSales.length !== 1 && 's'} registrada{visibleSales.length !== 1 && 's'},
+          pero no se recuperó ningún cobro asociado, así que de momento no se puede saber el medio de pago de cada una.
+          Los importes de venta que ves siguen siendo correctos. Si esto persiste, avisa al responsable técnico de la
+          plataforma.
         </Notice>
       )}
 

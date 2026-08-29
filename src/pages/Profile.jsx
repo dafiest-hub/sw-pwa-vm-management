@@ -74,9 +74,9 @@ export const Profile = () => {
             <dd className="font-mono text-[10px] text-content-secondary break-all">
               {profile?.id || user?.id || '—'}
             </dd>
-            <dt className="text-content-muted">Autenticación</dt>
+            <dt className="text-content-muted">Acceso</dt>
             <dd className="text-content-secondary">
-              {IS_DEMO ? 'Modo demostración local' : 'Supabase Auth'}
+              {IS_DEMO ? 'Cuenta de demostración' : 'Cuenta verificada'}
             </dd>
             <dt className="text-content-muted">Alta</dt>
             <dd className="text-content-secondary">{formatDate(profile?.created_at)}</dd>

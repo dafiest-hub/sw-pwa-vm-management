@@ -56,7 +56,7 @@ export const Users = () => {
       setProfiles(previous);
       toast.error(
         `No se pudo actualizar el rol: ${err.message}. ` +
-          'Revisa que exista una política RLS que permita a un administrador modificar otros perfiles.'
+          'Puede que tu cuenta no tenga permiso para modificar a otros usuarios; avisa al responsable técnico de la plataforma.'
       );
     }
   };

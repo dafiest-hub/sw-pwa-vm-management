@@ -48,7 +48,7 @@ export const Login = () => {
         {/* Header Marca */}
         <div className="text-center mb-8">
           <Logo size="lg" className="inline-flex mb-3" />
-          <h2 className="text-2xl font-black text-white tracking-tight">LIMPIEZIOT Vending PWA</h2>
+          <h2 className="text-2xl font-black text-white tracking-tight">LIMPIEZIOT Vending Management</h2>
           <p className="text-xs text-slate-400 mt-1">Control & Monitoreo de Máquinas Expendedoras</p>
         </div>
 
@@ -124,7 +124,7 @@ export const Login = () => {
           <div className="flex items-center justify-center gap-1.5 text-xs text-amber-400 font-bold mb-2">
             <Sparkles className="w-4 h-4" /> Acceso Directo Modo Demo
           </div>
-          <p className="text-[11px] text-slate-400 mb-3">Prueba la PWA con roles precargados:</p>
+          <p className="text-[11px] text-slate-400 mb-3">Prueba la plataforma con perfiles de ejemplo:</p>
           <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => switchDemoRole('admin')}

@@ -119,8 +119,10 @@ export const Sidebar = ({ isOpen, onClose }) => {
         </div>
 
         {/* Origen de los datos. Antes había aquí tres afirmaciones fijas y falsas
-            ("Firmware actualizado", "Supabase RLS Protection"). */}
-        <div className="p-4 border-t border-line-subtle bg-surface/40">
+            ("Firmware actualizado", "Supabase RLS Protection"). El nombre del
+            proveedor no le dice nada al usuario de negocio: basta con si los
+            datos son reales o de demostración. */}
+        <div className="p-4 border-t border-line-subtle bg-surface/40 space-y-2">
           <div className="p-3 rounded-xl bg-surface-raised border border-line-subtle text-[11px] space-y-1.5">
             <div className="flex items-center gap-2 font-semibold">
               {IS_DEMO ? (
@@ -131,16 +133,20 @@ export const Sidebar = ({ isOpen, onClose }) => {
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span className="text-content-secondary">Conectado a Supabase</span>
+                  <span className="text-content-secondary">Conectado</span>
                 </>
               )}
             </div>
             <div className="text-content-muted text-[10px]">
               {IS_DEMO
-                ? 'Datos de ejemplo en memoria, sin conexión a la base.'
-                : 'Los datos provienen de la base de producción.'}
+                ? 'Datos de ejemplo, sin conexión con las máquinas.'
+                : 'Información en vivo de tus máquinas.'}
             </div>
           </div>
+          <p className="text-[10px] text-content-faint text-center leading-relaxed">
+            Desarrollado por<br />
+            <span className="font-semibold text-content-muted">Angel David Covarrubias del Toro</span>
+          </p>
         </div>
       </aside>
     </>

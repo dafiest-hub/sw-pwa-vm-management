@@ -104,7 +104,7 @@ export async function saveMachineTankSettings(machineId, tanks, { deviceId } = {
   );
   if (invalid) {
     throw new Error(
-      `Tanque ${invalid.tank_number}: el precio y el nivel mínimo deben ser mayores que 0 (el firmware no admite 0) y el nivel mínimo no puede superar la capacidad (${invalid.capacity_liters} L).`
+      `Tanque ${invalid.tank_number}: el precio y el nivel mínimo deben ser mayores que 0 (la máquina no admite 0) y el nivel mínimo no puede superar la capacidad (${invalid.capacity_liters} L).`
     );
   }
 

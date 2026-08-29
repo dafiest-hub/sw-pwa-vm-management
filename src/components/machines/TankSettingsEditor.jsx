@@ -57,9 +57,9 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
           const p = Number(r.price_per_liter);
           const m = Number(r.low_threshold_liters);
           if (r.price_per_liter === '' || !Number.isFinite(p) || p <= 0)
-            return `T${r.tank_number}: el precio debe ser mayor que 0 (el firmware no admite 0)`;
+            return `T${r.tank_number}: el precio debe ser mayor que 0 (la máquina no admite 0)`;
           if (r.low_threshold_liters === '' || !Number.isFinite(m) || m <= 0)
-            return `T${r.tank_number}: el nivel mínimo debe ser mayor que 0 (el firmware no admite 0)`;
+            return `T${r.tank_number}: el nivel mínimo debe ser mayor que 0 (la máquina no admite 0)`;
           if (m > r.capacity_liters)
             return `T${r.tank_number}: el mínimo (${m} L) supera la capacidad (${r.capacity_liters} L)`;
           return null;
@@ -100,7 +100,7 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
         toast.info('Configuración guardada en los datos de demostración.');
       } else {
         toast.info(
-          'Configuración guardada en la base. Queda pendiente de enviar a la máquina: el publicador MQTT no está disponible.'
+          'Configuración guardada. Queda pendiente de enviar a la máquina: el canal de comunicación con el equipo no está disponible ahora mismo.'
         );
       }
       onSaved?.(result);
@@ -216,12 +216,12 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
       )}
 
       <p className="text-[11px] text-content-muted bg-surface-sunken border border-line-subtle rounded-xl px-3 py-2">
-        Al guardar se envían <strong>los 8 tanques a la vez</strong>: el firmware no admite
-        actualizaciones parciales. La máquina guarda la configuración y{' '}
+        Al guardar se envían <strong>los 8 tanques a la vez</strong>: la máquina no admite
+        actualizaciones parciales. Guarda la configuración y{' '}
         <strong>se reinicia unos 5 segundos después</strong>, por lo que quedará fuera de línea un
         momento. El precio y el nivel mínimo deben ser{' '}
-        <strong>mayores que 0</strong>: el firmware no admite 0 y la máquina quedaría pendiente de
-        sincronizar de forma permanente.
+        <strong>mayores que 0</strong>: la máquina no admite 0 y quedaría pendiente de sincronizar
+        de forma permanente.
       </p>
 
       <div className="flex flex-wrap items-center justify-between gap-2">

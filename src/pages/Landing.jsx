@@ -241,6 +241,9 @@ export const Landing = () => {
       <footer className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8 border-t border-slate-800/80 text-center text-xs text-slate-500 space-y-2">
         <p>© 2026 LIMPIEZIOT Vending Management. Plataforma de Control Inteligente para Expendedoras de Productos de Limpieza.</p>
         <p className="text-[10px] text-slate-600">Optimizada para máxima rentabilidad y control operacional en tiempo real.</p>
+        <p className="text-[10px] text-slate-600">
+          Desarrollado por <span className="font-semibold text-slate-500">Angel David Covarrubias del Toro</span>
+        </p>
       </footer>
     </div>
   );

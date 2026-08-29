@@ -35,9 +35,9 @@ export const PaymentBadge = ({ summary }) => {
         isMixed
           ? `Pago mixto: ${methods.map(paymentTypeLabel).join(' + ')}`
           : state === 'unlinked'
-            ? 'Venta sin tx_id: anterior al firmware 2.1.0 o capturada a mano'
+            ? 'Venta anterior al registro de cobros o capturada a mano: no se puede saber cómo se pagó'
             : state === 'missing'
-              ? 'La venta tiene tx_id pero no hay ingreso asociado en la base'
+              ? 'La venta se registró pero no llegó su cobro'
               : state === 'no_charge'
                 ? 'Venta fallida: no se cobró, el saldo quedó a favor del usuario'
                 : undefined

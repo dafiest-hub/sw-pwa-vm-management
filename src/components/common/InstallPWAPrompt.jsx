@@ -36,8 +36,8 @@ export const InstallPWAPrompt = () => {
           <Download className="w-5 h-5 animate-bounce" />
         </div>
         <div>
-          <h5 className="text-xs font-bold text-white">Instalar PWA de Control</h5>
-          <p className="text-[11px] text-slate-300">Accede instantáneamente desde tu inicio</p>
+          <h5 className="text-xs font-bold text-white">Instalar la aplicación</h5>
+          <p className="text-[11px] text-slate-300">Ábrela al instante desde tu pantalla de inicio</p>
         </div>
       </div>
       <div className="flex items-center gap-1.5">

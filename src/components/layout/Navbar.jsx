@@ -70,10 +70,16 @@ export const Navbar = ({ onToggleSidebar }) => {
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* El logo lleva al inicio. Antes cerraba la sesión. */}
-        <Link to="/dashboard" className="flex items-center gap-3 min-w-0" title="Ir al panel">
+        {/* El logo cierra la sesión y devuelve a la portada. `logout()` sirve a
+            los dos modos: con base de datos hace signOut, y en demostración
+            limpia el usuario y el perfil del contexto. */}
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 min-w-0 rounded-control hover:bg-surface-hover transition-colors p-1"
+          title="Cerrar sesión y volver a la portada"
+        >
           <Logo size="sm" />
-        </Link>
+        </button>
       </div>
 
       <div className="flex items-center gap-2">

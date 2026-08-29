@@ -61,7 +61,7 @@ export const MachineDetail = () => {
   };
 
   if (loading) {
-    return <LoadingState label="Cargando telemetría de la máquina…" />;
+    return <LoadingState label="Cargando el estado de la máquina…" />;
   }
 
   if (!machine) {
