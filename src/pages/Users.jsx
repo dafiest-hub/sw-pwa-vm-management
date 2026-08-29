@@ -2,31 +2,32 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { getMachines } from '../services/machineService';
 import {
   getProfiles,
-  updateAssignedMachines,
   updateProfileRole,
 } from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
 import { ErrorState, LoadingState } from '../components/ui/Primitives';
-import { Users as UsersIcon, Shield, Crown, Wrench, Eye, Cpu, Check, X, Sliders } from 'lucide-react';
+import { Users as UsersIcon, Shield, Crown, Wrench, Eye } from 'lucide-react';
 
 export const Users = () => {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, profile } = useAuth();
   const toast = useToast();
   const [profiles, setProfiles] = useState([]);
   const [allMachines, setAllMachines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Modal Asignar Máquinas
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedMachineIds, setSelectedMachineIds] = useState([]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [machs, profs] = await Promise.all([getMachines(), getProfiles()]);
+      // getMachines() sólo devuelve las máquinas del propio usuario: aquí se usa
+      // únicamente para poner nombre a los ids asignados que se reconozcan.
+      const [machs, profs] = await Promise.all([
+        getMachines(profile?.assigned_machine_ids),
+        getProfiles(),
+      ]);
       setAllMachines(machs);
       setProfiles(profs);
     } catch (err) {
@@ -35,7 +36,7 @@ export const Users = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [profile?.assigned_machine_ids]);
 
   useEffect(() => {
     loadData();
@@ -61,33 +62,6 @@ export const Users = () => {
     }
   };
 
-  const handleOpenAssignModal = (prof) => {
-    setSelectedUser(prof);
-    setSelectedMachineIds(prof.assigned_machine_ids || []);
-  };
-
-  const handleToggleMachine = (machId) => {
-    setSelectedMachineIds((prev) =>
-      prev.includes(machId) ? prev.filter((id) => id !== machId) : [...prev, machId]
-    );
-  };
-
-  const handleSaveAssignedMachines = async () => {
-    if (!selectedUser) return;
-    try {
-      await updateAssignedMachines(selectedUser.id, selectedMachineIds);
-      setProfiles((prev) =>
-        prev.map((p) =>
-          p.id === selectedUser.id ? { ...p, assigned_machine_ids: selectedMachineIds } : p
-        )
-      );
-      setSelectedUser(null);
-      toast.success('Asignación de máquinas guardada.');
-    } catch (err) {
-      toast.error(`No se pudo guardar la asignación: ${err.message}`);
-    }
-  };
-
   if (!isAdmin) {
     return (
       <div className="text-center py-12 space-y-2">
@@ -102,8 +76,15 @@ export const Users = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-black text-white tracking-tight">Gestión de Usuarios, Roles y Máquinas Asignadas</h2>
-        <p className="text-xs text-slate-400 mt-0.5">Control de acceso multi-tenant: Restringe qué máquinas específicas puede ver y gestionar cada usuario o administrador</p>
+        <h2 className="text-2xl font-black text-white tracking-tight">Gestión de Usuarios y Roles</h2>
+        <p className="text-xs text-slate-400 mt-0.5">Cada usuario ve únicamente las máquinas que tiene asignadas, sin excepción por rol</p>
+      </div>
+
+      {/* La asignación se hace por SQL a propósito: es la barrera que decide qué
+          datos devuelve la base, no un ajuste de interfaz. */}
+      <div className="p-3 rounded-2xl bg-surface-raised border border-line-subtle text-[11px] text-content-muted">
+        Las máquinas asignadas a cada usuario se configuran directamente en la base de datos. Aquí se
+        muestran para consulta; para cambiarlas, contacta con el responsable de la plataforma.
       </div>
 
       {/* Tabla de Usuarios */}
@@ -115,8 +96,8 @@ export const Users = () => {
                 <th className="p-4">Usuario / Email</th>
                 <th className="p-4">Nombre Completo</th>
                 <th className="p-4">Rol Asignado</th>
-                <th className="p-4">Máquinas Visibles / Asignadas</th>
-                <th className="p-4">Acciones</th>
+                <th className="p-4">Máquinas Asignadas</th>
+                <th className="p-4">Rol</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -127,7 +108,6 @@ export const Users = () => {
               ) : (
                 profiles.map((prof) => {
                   const assignedCount = prof.assigned_machine_ids?.length || 0;
-                  const isAll = assignedCount === allMachines.length;
                   return (
                     <tr key={prof.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="p-4">
@@ -157,10 +137,6 @@ export const Users = () => {
                             <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px]">
                               0 Máquinas (Sin acceso)
                             </span>
-                          ) : isAll ? (
-                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-bold">
-                              Todas las máquinas ({assignedCount})
-                            </span>
                           ) : (
                             prof.assigned_machine_ids.map(mId => {
                               const mObj = allMachines.find(m => m.id === mId);
@@ -183,14 +159,6 @@ export const Users = () => {
                           <option value="technician">Technician</option>
                           <option value="viewer">Viewer</option>
                         </select>
-
-                        <button
-                          onClick={() => handleOpenAssignModal(prof)}
-                          className="px-2.5 py-1 bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border border-brand-500/30 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1"
-                        >
-                          <Sliders className="w-3 h-3" />
-                          Asignar Máquinas
-                        </button>
                       </td>
                     </tr>
                   );
@@ -201,79 +169,6 @@ export const Users = () => {
         </div>
       </div>
 
-      {/* Modal Asignar Máquinas Especificas */}
-      {selectedUser && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150 relative">
-            <button
-              onClick={() => setSelectedUser(null)}
-              className="absolute top-5 right-5 p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                <Cpu className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">Asignación de Máquinas</h3>
-                <p className="text-xs text-slate-400 truncate max-w-xs">{selectedUser.full_name} ({selectedUser.email})</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-300">
-              Selecciona las máquinas que este usuario tendrá autorizadas para ver y operar en su panel:
-            </p>
-
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {allMachines.map((m) => {
-                const isSelected = selectedMachineIds.includes(m.id);
-                return (
-                  <label
-                    key={m.id}
-                    onClick={() => handleToggleMachine(m.id)}
-                    className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
-                      isSelected 
-                        ? 'bg-brand-500/15 border-brand-500/40 text-white' 
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold">
-                        {m.device_id}
-                      </span>
-                      <span className="text-xs font-bold">{m.name}</span>
-                    </div>
-                    <div className={`w-5 h-5 rounded-md flex items-center justify-center border ${
-                      isSelected ? 'bg-brand-500 border-brand-400 text-slate-950' : 'border-slate-700'
-                    }`}>
-                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-
-            <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={() => setSelectedUser(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveAssignedMachines}
-                className="px-5 py-2 rounded-xl bg-brand-500 hover:bg-brand-400 text-slate-950 text-xs font-bold shadow-lg shadow-brand-500/20 transition-all"
-              >
-                Guardar Asignación
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

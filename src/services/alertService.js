@@ -15,7 +15,8 @@ const byDateDesc = (a, b) => new Date(b.created_at) - new Date(a.created_at);
 function matches(a, filters = {}) {
   const { machineIds, category, alertType, resolved, from, to, includeConfigAck } = filters;
   if (!includeConfigAck && a.alert_type === 'config_ack') return false;
-  if (Array.isArray(machineIds) && machineIds.length && !machineIds.includes(a.machine_id)) return false;
+  // Igual que la rama Supabase: `[]` no deja pasar nada (ver _filters.js).
+  if (Array.isArray(machineIds) && !machineIds.includes(a.machine_id)) return false;
   if (category && category !== 'all' && a.category !== category) return false;
   if (alertType && alertType !== 'all' && a.alert_type !== alertType) return false;
   if (resolved === 'pending' && a.is_resolved) return false;

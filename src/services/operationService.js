@@ -22,7 +22,8 @@ const byDateDesc = (a, b) => new Date(b.created_at) - new Date(a.created_at);
 
 function matches(row, filters = {}) {
   const { machineIds, from, to, operationType } = filters;
-  if (Array.isArray(machineIds) && machineIds.length && !machineIds.includes(row.machine_id)) return false;
+  // Igual que la rama Supabase: `[]` no deja pasar nada (ver _filters.js).
+  if (Array.isArray(machineIds) && !machineIds.includes(row.machine_id)) return false;
   if (operationType && operationType !== 'all' && row.operation_type !== operationType) return false;
   if (from && new Date(row.created_at) < new Date(from)) return false;
   if (to && new Date(row.created_at) > new Date(to)) return false;

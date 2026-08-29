@@ -11,7 +11,8 @@ const INCOME_SELECT = '*, machine:machines (id, name, device_id)';
 /** Predicado compartido con la rama Supabase, para que el demo no mienta. */
 function matchesFilters(row, filters = {}, { productAware = true } = {}) {
   const { machineIds, productId, from, to, status } = filters;
-  if (Array.isArray(machineIds) && machineIds.length && !machineIds.includes(row.machine_id)) return false;
+  // Igual que la rama Supabase: `[]` no deja pasar nada (ver _filters.js).
+  if (Array.isArray(machineIds) && !machineIds.includes(row.machine_id)) return false;
   if (productAware && productId && row.product_id !== productId) return false;
   if (status && row.status !== status) return false;
   if (from && new Date(row.created_at) < new Date(from)) return false;

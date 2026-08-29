@@ -15,7 +15,7 @@ const ROLE_DESCRIPTION = {
 };
 
 export const Profile = () => {
-  const { user, profile, role, isAdmin, logout, isDemo } = useAuth();
+  const { user, profile, role, logout, isDemo } = useAuth();
   const { machines, loading } = useScopedMachines();
 
   const name = profile?.full_name || 'Usuario';
@@ -88,15 +88,10 @@ export const Profile = () => {
             <Cpu className="w-4 h-4 text-accent-soft" /> Máquinas asignadas
           </h4>
 
-          {isAdmin ? (
-            <p className="text-xs text-content-secondary">
-              Como administrador ves <strong>todas</strong> las máquinas de la red
-              {machines.length > 0 && ` (${machines.length})`}.
-            </p>
-          ) : !assigned?.length ? (
+          {!assigned?.length ? (
             <p className="text-xs text-amber-300">
-              No tienes máquinas asignadas. Pide a un administrador que te asigne al menos una desde
-              la pantalla de usuarios.
+              No tienes máquinas asignadas, así que no verás datos de ninguna. Pide al responsable de
+              la plataforma que te asigne al menos una.
             </p>
           ) : (
             <p className="text-xs text-content-muted">

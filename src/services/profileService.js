@@ -43,21 +43,8 @@ export async function updateProfileRole(userId, role) {
   );
 }
 
-export async function updateAssignedMachines(userId, machineIds) {
-  invalidateProfileDirectory();
-  return mutate(
-    'profiles.updateAssignedMachines',
-    (sb) =>
-      sb
-        .from('profiles')
-        .update({ assigned_machine_ids: machineIds })
-        .eq('id', userId)
-        .select()
-        .maybeSingle(),
-    () => {
-      const p = sampleProfiles.find((x) => x.id === userId);
-      if (p) p.assigned_machine_ids = machineIds;
-      return p;
-    }
-  );
-}
+/*
+ * Aquí vivía `updateAssignedMachines()`. Las asignaciones se hacen por SQL: son
+ * la barrera que decide qué datos devuelve la base (.doc/RLS_MULTITENANT.sql),
+ * no un ajuste de interfaz, y en producción deben quedar auditadas.
+ */

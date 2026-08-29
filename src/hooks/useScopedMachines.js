@@ -9,11 +9,15 @@ import { useAuth } from '../context/AuthContext';
  * Alertas y Operaciones traían el histórico completo, así que un usuario con
  * una sola máquina asignada veía los datos de todas.
  *
- * Nota: esto es coherencia de interfaz, no seguridad. La restricción real tiene
- * que vivir en políticas RLS (ver .doc/REDISENO_2026-08.md).
+ * El alcance es el mismo para TODOS los roles, administradores incluidos: se ven
+ * las máquinas de `assigned_machine_ids` y ninguna más. Sin asignación no se ve
+ * nada. Las asignaciones se hacen por SQL.
+ *
+ * Nota: esto es coherencia de interfaz, no seguridad. La restricción real vive
+ * en las políticas RLS (ver .doc/RLS_MULTITENANT.sql).
  */
 export function useScopedMachines() {
-  const { profile, isAdmin } = useAuth();
+  const { profile } = useAuth();
   const assigned = profile?.assigned_machine_ids;
 
   const [machines, setMachines] = useState([]);
@@ -24,14 +28,14 @@ export function useScopedMachines() {
     setLoading(true);
     setError(null);
     try {
-      setMachines(await getMachines(isAdmin ? null : assigned));
+      setMachines(await getMachines(assigned));
     } catch (e) {
       setError(e);
       setMachines([]);
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, assigned]);
+  }, [assigned]);
 
   useEffect(() => {
     load();
@@ -43,9 +47,9 @@ export function useScopedMachines() {
   const scopeFor = useCallback(
     (selectedId) => {
       if (selectedId) return [selectedId];
-      return isAdmin ? undefined : allowedIds;
+      return allowedIds;
     },
-    [isAdmin, allowedIds]
+    [allowedIds]
   );
 
   return { machines, allowedIds, scopeFor, loading, error, reload: load };

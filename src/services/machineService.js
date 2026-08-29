@@ -1,4 +1,4 @@
-import { query, mutate, IS_DEMO } from '../lib/dataAccess';
+import { query, IS_DEMO } from '../lib/dataAccess';
 import { supabase } from '../lib/supabaseClient';
 import { markPendingSync, clearPendingSync, getPendingSync } from '../lib/pendingSync';
 import { sampleMachines, sampleMachineStatus, sampleTanks } from '../mock/sampleData';
@@ -23,20 +23,30 @@ function demoMachines() {
   });
 }
 
+/**
+ * Máquinas visibles para un usuario, SIEMPRE acotadas a las que tiene asignadas.
+ *
+ * Sin asignación no se ve ninguna máquina, y eso vale **también para los
+ * administradores**: no hay excepción por rol. Antes, una lista vacía o nula
+ * significaba "no filtres" y devolvía la red entera, justo lo contrario de lo
+ * que dice la pantalla de perfil.
+ *
+ * La restricción de verdad está en la RLS (.doc/RLS_MULTITENANT.sql); esto es la
+ * mitad de interfaz, para no pedir a la base lo que ya se sabe que no toca.
+ */
 export async function getMachines(assignedIds = null) {
+  const ids = Array.isArray(assignedIds) ? assignedIds : [];
+  if (!ids.length) return [];
+
   const machines = await query(
     'machines.getMachines',
-    (sb) => {
-      let q = sb.from('machines').select(MACHINE_SELECT);
-      if (Array.isArray(assignedIds) && assignedIds.length) q = q.in('id', assignedIds);
-      return q.order('name', { ascending: true });
-    },
-    () => {
-      const all = demoMachines();
-      return Array.isArray(assignedIds) && assignedIds.length
-        ? all.filter((m) => assignedIds.includes(m.id))
-        : all;
-    }
+    (sb) =>
+      sb
+        .from('machines')
+        .select(MACHINE_SELECT)
+        .in('id', ids)
+        .order('name', { ascending: true }),
+    () => demoMachines().filter((m) => ids.includes(m.id))
   );
   return IS_DEMO() ? machines : machines.map(normalizeStatus);
 }
@@ -196,53 +206,12 @@ export async function publishTankConfig(machineId, deviceId, tanks) {
 
 export const readPendingSync = getPendingSync;
 
-export async function createMachine(machineData) {
-  const machine = await mutate(
-    'machines.createMachine',
-    (sb) =>
-      sb
-        .from('machines')
-        .insert([
-          {
-            device_id: machineData.device_id,
-            name: machineData.name,
-            location_address: machineData.location_address,
-            status: machineData.status || 'online',
-            firmware_version: machineData.firmware_version || '2.1.0',
-          },
-        ])
-        .select()
-        .single(),
-    () => {
-      const nueva = {
-        id: `m-${Date.now()}`,
-        ...machineData,
-        status: machineData.status || 'online',
-        firmware_version: machineData.firmware_version || '2.1.0',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        machine_status: null,
-        tanks_count: 0,
-        low_stock_tanks: 0,
-      };
-      sampleMachines.unshift(nueva);
-      return nueva;
-    }
-  );
-
-  if (!IS_DEMO() && machine?.id) {
-    const { error } = await supabase.from('machine_status').insert([
-      {
-        machine_id: machine.id,
-        available_balance: 0,
-        stored_cash_balance: 0,
-        door_open: false,
-        coinbox_tampered: false,
-        tilt_detected: false,
-        last_keepalive_at: new Date().toISOString(),
-      },
-    ]);
-    if (error) console.error(`[machines.createMachine/status] ${error.code} — ${error.message}`);
-  }
-  return machine;
-}
+/*
+ * Aquí vivía `createMachine()`. El alta de máquinas sale de la PWA a propósito:
+ * una expendedora se da de alta en la base cuando el equipo está construido y
+ * probado, junto con sus 8 filas de machine_tanks y su machine_status. Crearla
+ * desde la interfaz dejaba una máquina sin tanques que rompía las pantallas de
+ * detalle, y en producción es una operación que debe quedar auditada en SQL.
+ * Lo mismo vale para asignarla a un usuario: `assigned_machine_ids` se rellena
+ * por SQL (ver .doc/RLS_MULTITENANT.sql).
+ */

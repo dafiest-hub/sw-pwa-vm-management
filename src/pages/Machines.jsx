@@ -1,26 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { getMachines, createMachine } from '../services/machineService';
-import { Cpu, MapPin, Search, ArrowRight, Layers, Plus, X, CheckCircle2, Compass } from 'lucide-react';
+import { getMachines } from '../services/machineService';
+import { Cpu, MapPin, Search, ArrowRight, Layers, Compass } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const Machines = () => {
-  const { profile, isTechnician } = useAuth();
+  const { profile } = useAuth();
   const [machines, setMachines] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
-
-  // Estado del Modal de Registro
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [formData, setFormData] = useState({
-    device_id: '',
-    name: '',
-    location_address: '',
-    status: 'online'
-  });
 
   useEffect(() => {
     loadMachines();
@@ -38,38 +27,6 @@ export const Machines = () => {
     }
   };
 
-  const handleOpenModal = () => {
-    setFormData({
-      device_id: `VM-${Math.floor(100 + Math.random() * 900)}`,
-      name: '',
-      location_address: '',
-      status: 'online'
-    });
-    setErrorMsg('');
-    setIsModalOpen(true);
-  };
-
-  const handleSubmitNewMachine = async (e) => {
-    e.preventDefault();
-    if (!formData.device_id || !formData.name) {
-      setErrorMsg('El ID del dispositivo y el nombre de la máquina son obligatorios.');
-      return;
-    }
-
-    setSubmitting(true);
-    setErrorMsg('');
-    try {
-      await createMachine(formData);
-      setIsModalOpen(false);
-      await loadMachines();
-    } catch (err) {
-      console.error('Error al registrar máquina:', err);
-      setErrorMsg(err.message || 'Error al guardar la máquina en la base de datos.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const filteredMachines = machines.filter(m => {
     const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           m.device_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,22 +38,11 @@ export const Machines = () => {
   return (
     <div className="space-y-6">
 
-      {/* Header & Botón Registrar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Red de Máquinas Vending</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Gestión y monitoreo individual de las unidades expendedoras</p>
-        </div>
-
-        {isTechnician && (
-          <button
-            onClick={handleOpenModal}
-            className="px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-slate-950 font-bold text-xs shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            Registrar Nueva Máquina
-          </button>
-        )}
+      {/* Las máquinas se dan de alta en la base cuando el equipo está construido
+          y probado, nunca desde aquí. */}
+      <div>
+        <h2 className="text-2xl font-black text-white tracking-tight">Red de Máquinas Vending</h2>
+        <p className="text-xs text-slate-400 mt-0.5">Monitoreo individual de las unidades expendedoras que tienes asignadas</p>
       </div>
 
       {/* Buscador & Filtros */}
@@ -128,6 +74,15 @@ export const Machines = () => {
       {/* Grid de Máquinas */}
       {loading ? (
         <div className="text-center py-12 text-slate-400 text-xs">Cargando máquinas...</div>
+      ) : machines.length === 0 ? (
+        <div className="text-center py-12 space-y-2">
+          <Compass className="w-7 h-7 text-slate-600 mx-auto" />
+          <p className="text-sm font-bold text-slate-300">No tienes máquinas asignadas</p>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            Sólo se ven las expendedoras que tienes asignadas. Pide al responsable de la plataforma
+            que te asigne al menos una.
+          </p>
+        </div>
       ) : filteredMachines.length === 0 ? (
         <div className="text-center py-12 text-slate-400 text-xs">No se encontraron máquinas con los criterios especificados.</div>
       ) : (
@@ -194,102 +149,6 @@ export const Machines = () => {
         </div>
       )}
 
-      {/* Modal Formulario de Registro de Máquina */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150 relative">
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-5 right-5 p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                <Cpu className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">Registrar Nueva Máquina</h3>
-                <p className="text-xs text-slate-400">Agrega una nueva expendedora a la base de datos</p>
-              </div>
-            </div>
-
-            {errorMsg && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium">
-                {errorMsg}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmitNewMachine} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">ID del Dispositivo</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.device_id}
-                  onChange={(e) => setFormData({ ...formData, device_id: e.target.value })}
-                  placeholder="Ej. VM-104"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Nombre de la Máquina</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ej. Expendedora Plaza Central"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Dirección / Ubicación</label>
-                <input
-                  type="text"
-                  value={formData.location_address}
-                  onChange={(e) => setFormData({ ...formData, location_address: e.target.value })}
-                  placeholder="Ej. Av. Reforma #120, Col. Juárez"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Estado Inicial</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-brand-500"
-                >
-                  <option value="online">Online (Operativa)</option>
-                  <option value="maintenance">Mantenimiento</option>
-                  <option value="offline">Offline</option>
-                </select>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-slate-950 text-xs font-bold shadow-lg shadow-brand-500/20 transition-all flex items-center gap-1.5"
-                >
-                  {submitting ? 'Guardando...' : 'Guardar Máquina'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

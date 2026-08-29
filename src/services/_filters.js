@@ -7,8 +7,11 @@ export function applyCommonFilters(q, filters = {}, { dateColumn = 'created_at' 
   const ids = filters.machineIds;
   if (Array.isArray(ids)) {
     if (ids.length === 1) q = q.eq('machine_id', ids[0]);
-    else if (ids.length > 1) q = q.in('machine_id', ids);
-    // ids === [] significa "sin máquinas asignadas": lo resuelve el llamador.
+    // `[]` significa "sin máquinas asignadas" y debe devolver CERO filas, no la
+    // tabla entera. PostgREST resuelve `in.()` como lista vacía, que es justo
+    // eso. Antes se dejaba pasar sin filtro y un usuario sin asignación veía
+    // toda la red.
+    else q = q.in('machine_id', ids);
   }
   if (filters.productId) q = q.eq('product_id', filters.productId);
   if (filters.from) q = q.gte(dateColumn, filters.from);
