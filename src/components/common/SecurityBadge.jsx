@@ -60,11 +60,16 @@ export const SecurityBadge = ({ status }) => {
           </div>
         </div>
 
-        {/* Saldo Disponible en Máquina */}
+        {/* Saldo de la sesión en curso: dinero insertado y no gastado. Se llama
+            «sin reclamar» y no «disponible» desde que la ficha muestra también el
+            dinero del monedero (stored_cash_balance): son dos cifras distintas y
+            «Saldo Disponible» invitaba a confundirlas. */}
         <div className="p-2.5 rounded-xl bg-brand-950/40 border border-brand-800/40 text-brand-300 flex items-center gap-2">
           <DollarSign className="w-4 h-4 text-brand-400 flex-shrink-0" />
           <div>
-            <div className="text-[10px] text-slate-400">Saldo Disponible</div>
+            <div className="text-[10px] text-slate-400" title="Monedas insertadas que el cliente dejó sin gastar">
+              Saldo sin reclamar
+            </div>
             <div className="font-bold text-white">${Number(status.available_balance || 0).toFixed(2)} MXN</div>
           </div>
         </div>

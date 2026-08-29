@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
   Pencil,
   Save,
+  Wallet,
 } from 'lucide-react';
 import { getLastConfigAck } from '../services/alertService';
 import { readPendingSync, publishTankConfig } from '../services/machineService';
@@ -18,7 +19,7 @@ import { TankSettingsEditor, SyncStatusBadge } from '../components/machines/Tank
 import { Modal } from '../components/ui/Modal';
 import { StatusPill, LoadingState, EmptyState } from '../components/ui/Primitives';
 import { useToast } from '../components/ui/Toast';
-import { formatDateTime } from '../lib/format';
+import { formatDateTime, formatMoney, formatRelative } from '../lib/format';
 import { parseConfigAck } from '../lib/alerts';
 
 export const MachineDetail = () => {
@@ -126,22 +127,55 @@ export const MachineDetail = () => {
               <span>{machine.location_address}</span>
             </div>
           </div>
-          <div className="self-start sm:self-auto flex flex-wrap gap-2">
-            {/* Sólo administradores: renombrar o mover una máquina es un cambio de
-                catálogo, no una operación de campo. */}
-            {isAdmin && (
-              <button onClick={openEdit} className="btn-secondary">
-                <Pencil className="w-4 h-4 text-accent-soft" /> Editar ficha
+          <div className="self-start sm:self-auto flex flex-col sm:items-end gap-3">
+            {/* Dinero acumulado en el monedero: `stored_cash_balance`, lo que hay
+                físicamente dentro esperando recolección. NO es el saldo de la
+                sesión en curso (`available_balance`, el de la telemetría de
+                seguridad de abajo): éste sube con cada moneda, no baja al
+                concretarse la venta —el dinero ya está dentro— y sólo vuelve a 0
+                con el corte de caja del menú de servicio S3.3. */}
+            <div className="w-full sm:w-auto flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-surface-sunken border border-line-subtle">
+              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0">
+                <Wallet className="w-5 h-5 text-emerald-300" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-content-faint">
+                  Dinero en monedero
+                </p>
+                {machine.machine_status ? (
+                  <>
+                    <p className="text-xl font-black text-emerald-300 leading-tight">
+                      {formatMoney(machine.machine_status.stored_cash_balance)}
+                    </p>
+                    <p className="text-[10px] text-content-faint">
+                      Pendiente de recolectar · {formatRelative(machine.machine_status.updated_at)}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs text-content-muted mt-0.5">
+                    La máquina aún no ha enviado telemetría
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {/* Sólo administradores: renombrar o mover una máquina es un cambio de
+                  catálogo, no una operación de campo. */}
+              {isAdmin && (
+                <button onClick={openEdit} className="btn-secondary">
+                  <Pencil className="w-4 h-4 text-accent-soft" /> Editar ficha
+                </button>
+              )}
+              {isTechnician && (
+                <button onClick={() => setShowSettings(true)} className="btn-primary">
+                  <SlidersHorizontal className="w-4 h-4" /> Precios y niveles mínimos
+                </button>
+              )}
+              <button onClick={loadMachineData} className="btn-secondary">
+                <Activity className="w-4 h-4 text-accent-soft" /> Refrescar
               </button>
-            )}
-            {isTechnician && (
-              <button onClick={() => setShowSettings(true)} className="btn-primary">
-                <SlidersHorizontal className="w-4 h-4" /> Precios y niveles mínimos
-              </button>
-            )}
-            <button onClick={loadMachineData} className="btn-secondary">
-              <Activity className="w-4 h-4 text-accent-soft" /> Refrescar
-            </button>
+            </div>
           </div>
         </div>
       </div>
@@ -189,7 +223,7 @@ export const MachineDetail = () => {
               id="machine-name"
               type="text"
               required
-              maxLength={120}
+              maxLength={100}
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="Ej. Expendedora Plaza Central"
