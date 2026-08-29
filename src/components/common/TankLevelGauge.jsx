@@ -4,7 +4,26 @@ import { productChipClass, liquidGradientClass } from '../../lib/tankColors';
 
 export const TankLevelGauge = ({ tank, onRefillClick, isTechnician }) => {
   const percentage = Math.min(100, Math.max(0, Number(tank.current_percentage || ((tank.current_liters / tank.capacity_liters) * 100).toFixed(1))));
-  const isLow = !tank.is_above_minimum || percentage < 20;
+
+  // El aviso de nivel bajo sale del umbral configurado del tanque
+  // (low_threshold_liters), NUNCA de un porcentaje fijo: antes se usaba
+  // `|| percentage < 20`, así que un tanque con 4.50 L y mínimo 3 L salía
+  // «Bajo» sólo por ser el 18 % de su capacidad, contradiciendo a
+  // is_above_minimum y al conteo de tanques bajos del panel.
+  const capacity = Number(tank.capacity_liters);
+  const threshold = Number(tank.low_threshold_liters);
+  const liters = Number(tank.current_liters);
+  const hasThreshold = Number.isFinite(threshold) && threshold > 0 && Number.isFinite(liters);
+  // El flag vive en la base y lo escribe el consumidor; si el umbral se acaba de
+  // cambiar puede ir un momento por detrás, por eso manda el cálculo en litros.
+  const isLow = hasThreshold ? liters < threshold : tank.is_above_minimum === false;
+
+  // Marca «LOW» del cilindro, a la altura real del umbral en vez de a un cuarto fijo.
+  const thresholdPct =
+    hasThreshold && Number.isFinite(capacity) && capacity > 0
+      ? Math.min(100, Math.max(0, (threshold / capacity) * 100))
+      : null;
+
   const isPumpOk = tank.is_pump_working !== false;
 
   return (
@@ -30,7 +49,10 @@ export const TankLevelGauge = ({ tank, onRefillClick, isTechnician }) => {
             </span>
           )}
           {isLow && (
-            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30" title="Nivel por debajo de reserva">
+            <span
+              className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30"
+              title={hasThreshold ? `${liters} L por debajo del mínimo de ${threshold} L` : 'Nivel por debajo de reserva'}
+            >
               <AlertTriangle className="w-3 h-3 text-amber-400" />
               Bajo
             </span>
@@ -52,8 +74,18 @@ export const TankLevelGauge = ({ tank, onRefillClick, isTechnician }) => {
             <div className="w-full border-b border-dashed border-white/50 text-[8px] text-white/70 pl-0.5">MAX</div>
             <div className="w-full border-b border-dashed border-white/50"></div>
             <div className="w-full border-b border-dashed border-white/50"></div>
-            <div className="w-full border-b border-dashed border-amber-400 text-[8px] text-amber-300 pl-0.5">LOW</div>
           </div>
+
+          {/* Marca del mínimo configurado, a su altura real */}
+          {thresholdPct !== null && (
+            <div
+              className="absolute left-0 right-0 z-10 pointer-events-none border-b border-dashed border-amber-400/70"
+              style={{ bottom: `${thresholdPct}%` }}
+              title={`Nivel mínimo: ${threshold} L`}
+            >
+              <span className="text-[8px] text-amber-300 pl-0.5">LOW</span>
+            </div>
+          )}
 
           {/* Columna de Líquido animada */}
           <div 
