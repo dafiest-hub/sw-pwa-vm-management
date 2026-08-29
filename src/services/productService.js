@@ -15,13 +15,29 @@ function toPayload(input) {
   };
 }
 
+/**
+ * Longitudes de las columnas en Postgres: sku VARCHAR(50), name VARCHAR(100).
+ * Sin comprobarlas aquí, pasarse devuelve un 22001 crudo de PostgREST en vez de
+ * un mensaje en el formulario. `description` es TEXT y no tiene límite en la
+ * base; el de aquí es para que un pegado accidental no se guarde sin querer.
+ */
+const LIMITES = { sku: 50, name: 100, description: 500 };
+
 export function validateProduct(input) {
   const p = toPayload(input);
   if (!p.sku) return 'El SKU es obligatorio.';
   if (!/^[A-Z0-9-]+$/.test(p.sku)) return 'El SKU sólo admite letras, números y guiones (ej. DET-COLOR).';
+  if (p.sku.length > LIMITES.sku) return `El SKU no puede pasar de ${LIMITES.sku} caracteres.`;
   if (!p.name) return 'El nombre es obligatorio.';
-  if (!Number.isFinite(p.default_price_per_liter) || p.default_price_per_liter < 0)
-    return 'El precio por litro debe ser un número mayor o igual a 0.';
+  if (p.name.length > LIMITES.name) return `El nombre no puede pasar de ${LIMITES.name} caracteres.`;
+  if ((p.description || '').length > LIMITES.description)
+    return `La descripción no puede pasar de ${LIMITES.description} caracteres.`;
+  // > 0, no >= 0 aunque el CHECK de la base sea `>= 0`: el botón «Precio de
+  // catálogo» del editor de tanques copia este valor a los 8 tanques, y allí un
+  // 0 es inguardable (el firmware lo descarta). Un producto a 0 dejaría el
+  // formulario en rojo sin que se entienda por qué.
+  if (!Number.isFinite(p.default_price_per_liter) || p.default_price_per_liter <= 0)
+    return 'El precio por litro debe ser un número mayor que 0.';
   if (!Number.isFinite(p.density_kg_m3) || p.density_kg_m3 <= 0)
     return 'La densidad debe ser un número mayor que 0.';
   return null;

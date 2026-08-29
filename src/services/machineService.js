@@ -85,6 +85,74 @@ export async function getMachineById(id) {
 }
 
 /**
+ * Reglas de precio y nivel mínimo de un tanque. Viven aquí, en una sola
+ * función, porque las comprueban dos capas —el editor mientras se escribe y
+ * `saveMachineTankSettings` antes de tocar la base— y si divergieran el editor
+ * dejaría guardar algo que el guardado rechaza.
+ *
+ * Las cuatro reglas salen de restricciones reales, no de gusto:
+ *
+ *  - **Formato llano.** El parser del firmware es manual (sin `strtof`, por la
+ *    restricción de FPU del ESP32) y solo entiende dígitos y punto decimal.
+ *    `1e-7` o `15,5` rompen el parseo, y `JSON.stringify` emite notación
+ *    exponencial por debajo de 1e-6.
+ *  - **Mayor que 0.** El firmware descarta en silencio un valor <= 0 y aun así
+ *    responde `ack "stored"`; `mqtt-publisher` responde 400. El CHECK de la
+ *    base es `>= 0`, más laxo, así que esta es la única defensa contra el 0:
+ *    se guardaría en machine_tanks y jamás llegaría al equipo.
+ *  - **Decimales acotados.** `price_per_liter` es NUMERIC(10,2) y
+ *    `low_threshold_liters` NUMERIC(8,3): Postgres redondea de más en
+ *    silencio, pero el downlink se publica desde el formulario, no desde lo
+ *    guardado. Un 15.005 dejaría la base en 15.01 y la máquina en 15.005.
+ *  - **Cota superior.** `mqtt-publisher` exige < 1e6 para que la serialización
+ *    no se vaya a exponencial.
+ *
+ * En los cuatro casos el fallo es el mismo: base y máquina discrepantes, con la
+ * máquina «Pendiente de sincronizar» de forma permanente.
+ */
+const LLANO = /^\d+(\.\d+)?$/;
+const COTA = 1e6;
+
+const decimalesDe = (s) => {
+  const i = s.indexOf('.');
+  return i === -1 ? 0 : s.length - i - 1;
+};
+
+function revisarCampo(etiqueta, valor, { maxDecimales }) {
+  const raw = String(valor ?? '').trim();
+  if (!raw) return `${etiqueta} no puede quedar vacío`;
+  if (!LLANO.test(raw))
+    return `${etiqueta} solo admite dígitos y punto decimal (sin comas, signos ni notación científica)`;
+  const n = Number(raw);
+  if (!(n > 0)) return `${etiqueta} debe ser mayor que 0 (la máquina no admite 0)`;
+  if (decimalesDe(raw) > maxDecimales)
+    return `${etiqueta} admite como máximo ${maxDecimales} decimales (con más, la base y la máquina guardarían valores distintos)`;
+  if (n >= COTA) return `${etiqueta} debe ser menor que ${COTA}`;
+  return null;
+}
+
+/** Problema del tanque, o null si es válido. */
+export function validateTankRow(t) {
+  const n = t.tank_number;
+  const precio = revisarCampo(`T${n}: el precio`, t.price_per_liter, { maxDecimales: 2 });
+  if (precio) return precio;
+
+  const minimo = revisarCampo(`T${n}: el nivel mínimo`, t.low_threshold_liters, { maxDecimales: 3 });
+  if (minimo) return minimo;
+
+  const m = Number(t.low_threshold_liters);
+  const cap = Number(t.capacity_liters);
+  if (Number.isFinite(cap) && m > cap)
+    return `T${n}: el mínimo (${m} L) supera la capacidad del tanque (${cap} L)`;
+  return null;
+}
+
+/** Todos los problemas de la máquina, en orden de tanque. */
+export function validateTankSettings(tanks) {
+  return (tanks || []).map(validateTankRow).filter(Boolean);
+}
+
+/**
  * Guarda precio y nivel mínimo de los 8 tanques de una máquina y publica la
  * configuración al equipo.
  *
@@ -101,22 +169,11 @@ export async function getMachineById(id) {
  * pendiente de sincronizar.
  */
 export async function saveMachineTankSettings(machineId, tanks, { deviceId } = {}) {
-  // El firmware descarta en silencio price_per_liter/low_threshold_liters <= 0 y
-  // la función de publicación responde 400. Si dejáramos pasar un 0 se guardaría
-  // en machine_tanks pero nunca llegaría al equipo: la base y la máquina
-  // quedarían discrepantes y la máquina «Pendiente de sincronizar» para siempre,
-  // con el reintento manual fallando igual. Por eso aquí es > 0, no >= 0.
-  const invalid = tanks.find(
-    (t) =>
-      !(Number(t.price_per_liter) > 0) ||
-      !(Number(t.low_threshold_liters) > 0) ||
-      Number(t.low_threshold_liters) > Number(t.capacity_liters)
-  );
-  if (invalid) {
-    throw new Error(
-      `Tanque ${invalid.tank_number}: el precio y el nivel mínimo deben ser mayores que 0 (la máquina no admite 0) y el nivel mínimo no puede superar la capacidad (${invalid.capacity_liters} L).`
-    );
-  }
+  // Última barrera antes de escribir: lo mismo que ya comprueba el editor, por
+  // si se llama desde otro sitio. Ver validateTankRow para el porqué de cada
+  // regla; ninguna la cubre la base, cuyo CHECK es solo `>= 0`.
+  const problemas = validateTankSettings(tanks);
+  if (problemas.length) throw new Error(problemas.join('. '));
 
   const payloadFor = (t) => ({
     price_per_liter: Number(t.price_per_liter),

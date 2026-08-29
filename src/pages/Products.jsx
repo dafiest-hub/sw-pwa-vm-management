@@ -226,6 +226,7 @@ export const Products = () => {
               id="sku"
               className="input uppercase"
               required
+              maxLength={50}
               value={form.sku}
               onChange={(e) => setForm({ ...form, sku: e.target.value })}
               placeholder="DET-COLOR"
@@ -240,6 +241,7 @@ export const Products = () => {
               id="name"
               className="input"
               required
+              maxLength={100}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Detergente Pro-Color"
@@ -253,6 +255,7 @@ export const Products = () => {
             <textarea
               id="description"
               rows={2}
+              maxLength={500}
               className="textarea"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -269,7 +272,7 @@ export const Products = () => {
                 id="price"
                 type="number"
                 step="0.01"
-                min="0"
+                min="0.01"
                 required
                 className="input"
                 value={form.default_price_per_liter}
