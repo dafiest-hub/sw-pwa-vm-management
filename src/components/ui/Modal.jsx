@@ -20,28 +20,39 @@ export const Modal = ({
 }) => {
   const panelRef = useRef(null);
 
+  // `onClose` suele llegar como función inline, así que cambia de identidad en
+  // cada render. Guardarla en una ref permite que el efecto de abajo dependa
+  // sólo de `open`: si dependiera de `onClose`, cada tecla escrita en un campo
+  // provocaría un render del padre, el efecto se volvería a ejecutar y el foco
+  // saltaría del input al botón de cerrar (primer enfocable del panel).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return undefined;
 
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Escape') onCloseRef.current?.();
     };
     document.addEventListener('keydown', onKey);
 
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Foco al primer control para que el teclado no se quede en el fondo.
-    const focusable = panelRef.current?.querySelector(
-      'input, select, textarea, button, [href], [tabindex]:not([tabindex="-1"])'
-    );
-    focusable?.focus?.();
+    // Foco al primer campo para que el teclado no se quede en el fondo.
+    // Se prefiere un control de formulario al botón X de la cabecera, que es
+    // el primero en orden de DOM.
+    const panel = panelRef.current;
+    const target =
+      panel?.querySelector('input, select, textarea') ||
+      panel?.querySelector('button, [href], [tabindex]:not([tabindex="-1"])');
+    target?.focus?.();
 
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
