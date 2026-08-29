@@ -211,10 +211,18 @@ export const readPendingSync = getPendingSync;
  * desde la PWA: `device_id`, `status` y `firmware_version` los publica el propio
  * equipo, y el alta sigue siendo cosa de la base.
  *
- * Requiere la política RLS «Edición de ficha de máquina»
- * (.doc/RLS_MULTITENANT.sql, PASO 4). Sin ella el UPDATE no afecta a ninguna
- * fila y `maybeSingle()` devuelve null: por eso se comprueba el resultado y se
- * lanza un error explicativo en vez de dejar creer que se guardó.
+ * Reservado a administradores. Dos capas en la base, independientes:
+ *
+ *  - Política RLS «Edición de ficha de máquina» -> QUÉ FILAS: sólo un admin, y
+ *    sólo sobre máquinas que tenga asignadas.
+ *  - `grant update (name, location_address)`    -> QUÉ COLUMNAS: el motor
+ *    rechaza tocar device_id, status o firmware_version aunque la petición
+ *    llegue por la API a mano. RLS es row-level y no sabe de columnas.
+ *
+ * Ambas en .doc/RLS_MULTITENANT.sql, PASO 4. Sin la política el UPDATE no afecta
+ * a ninguna fila y `maybeSingle()` devuelve null —PostgREST NO da error—: por eso
+ * se comprueba el resultado y se lanza un error explicativo en vez de dejar
+ * creer que se guardó.
  */
 export async function updateMachineInfo(machineId, { name, location_address }) {
   const nombre = String(name ?? '').trim();
@@ -246,7 +254,7 @@ export async function updateMachineInfo(machineId, { name, location_address }) {
 
   if (!updated) {
     throw new Error(
-      'No se guardó ningún cambio: tu cuenta no tiene permiso para editar esta máquina.'
+      'No se guardó ningún cambio: sólo un administrador puede editar la ficha de esta máquina.'
     );
   }
   return updated;

@@ -23,7 +23,7 @@ import { parseConfigAck } from '../lib/alerts';
 
 export const MachineDetail = () => {
   const { id } = useParams();
-  const { isTechnician } = useAuth();
+  const { isTechnician, isAdmin } = useAuth();
   const toast = useToast();
   const [machine, setMachine] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -127,7 +127,9 @@ export const MachineDetail = () => {
             </div>
           </div>
           <div className="self-start sm:self-auto flex flex-wrap gap-2">
-            {isTechnician && (
+            {/* Sólo administradores: renombrar o mover una máquina es un cambio de
+                catálogo, no una operación de campo. */}
+            {isAdmin && (
               <button onClick={openEdit} className="btn-secondary">
                 <Pencil className="w-4 h-4 text-accent-soft" /> Editar ficha
               </button>
