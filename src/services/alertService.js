@@ -53,7 +53,7 @@ let supportsResolvedBy = true;
 export async function resolveAlert(alertId, { resolvedBy } = {}) {
   const base = { is_resolved: true, resolved_at: new Date().toISOString() };
 
-  if (IS_DEMO) {
+  if (IS_DEMO()) {
     const a = sampleSystemAlerts.find((x) => x.id === alertId);
     if (a) Object.assign(a, base, { resolved_by: resolvedBy || null });
     return a;

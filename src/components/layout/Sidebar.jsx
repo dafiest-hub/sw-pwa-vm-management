@@ -1,7 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { IS_DEMO } from '../../lib/dataAccess';
 import { 
   LayoutDashboard, 
   Cpu, 
@@ -17,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, onClose }) => {
-  const { isAdmin, isTechnician, role } = useAuth();
+  const { isAdmin, isTechnician, role, isDemo } = useAuth();
 
   const navigationItems = [
     {
@@ -125,7 +124,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
         <div className="p-4 border-t border-line-subtle bg-surface/40 space-y-2">
           <div className="p-3 rounded-xl bg-surface-raised border border-line-subtle text-[11px] space-y-1.5">
             <div className="flex items-center gap-2 font-semibold">
-              {IS_DEMO ? (
+              {isDemo ? (
                 <>
                   <Database className="w-4 h-4 text-amber-400" />
                   <span className="text-amber-300">Modo demostración</span>
@@ -138,7 +137,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
               )}
             </div>
             <div className="text-content-muted text-[10px]">
-              {IS_DEMO
+              {isDemo
                 ? 'Datos de ejemplo, sin conexión con las máquinas.'
                 : 'Información en vivo de tus máquinas.'}
             </div>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { enterDemoMode, exitDemoMode, isDemoActive } from '../lib/demoMode';
 import { sampleProfiles } from '../mock/sampleData';
 
 const AuthContext = createContext();
@@ -8,19 +9,34 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isDemo, setIsDemo] = useState(!isSupabaseConfigured);
+  // El estado de React y la capa de datos deben moverse JUNTOS: si divergen,
+  // la interfaz dice «demostración» mientras las consultas van a la base real.
+  const [isDemo, setIsDemo] = useState(isDemoActive);
+
+  const startDemo = () => {
+    enterDemoMode();
+    setIsDemo(true);
+  };
+
+  const stopDemo = () => {
+    exitDemoMode();
+    setIsDemo(false);
+  };
 
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
       // 1. Obtener sesión inicial de Supabase
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
+          // Imprescindible: si en esta pestaña se había entrado a la
+          // demostración, `sessionStorage` la sigue marcando activa y un usuario
+          // real vería datos de ejemplo al recargar. La sesión manda.
+          stopDemo();
           setUser(session.user);
           fetchProfile(session.user.id);
         } else {
           setUser(null);
           setProfile(null);
-          setIsDemo(false);
           setLoading(false);
         }
       });
@@ -28,9 +44,10 @@ export const AuthProvider = ({ children }) => {
       // 2. Escuchar cambios de autenticación
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
+          // Una sesión real manda sobre cualquier demostración en curso.
+          stopDemo();
           setUser(session.user);
           await fetchProfile(session.user.id);
-          setIsDemo(false);
         } else {
           setUser(null);
           setProfile(null);
@@ -40,10 +57,10 @@ export const AuthProvider = ({ children }) => {
 
       return () => subscription.unsubscribe();
     } else {
-      // Modo Demo disponible (Sin sesión activa al inicio)
+      // Sin credenciales la demostración es el único modo posible.
       setUser(null);
       setProfile(null);
-      setIsDemo(true);
+      startDemo();
       setLoading(false);
     }
   }, []);
@@ -99,28 +116,37 @@ export const AuthProvider = ({ children }) => {
     } else {
       // Demo login
       const matched = sampleProfiles.find(p => p.email.toLowerCase() === email.toLowerCase()) || sampleProfiles[0];
+      startDemo();
       setUser(matched);
       setProfile(matched);
-      setIsDemo(true);
       return { user: matched };
     }
   };
 
+  /**
+   * Entra en la demostración —o cambia de rol dentro de ella— con datos de
+   * ejemplo. `startDemo()` conmuta también la capa de datos, así que a partir de
+   * aquí NINGUNA consulta llega a la base, haya credenciales o no. Antes esto
+   * sólo tocaba el estado de React y la demostración acababa leyendo producción.
+   */
   const switchDemoRole = (roleName) => {
     const matched = sampleProfiles.find(p => p.role === roleName) || {
       ...sampleProfiles[0],
       role: roleName,
       full_name: `Usuario ${roleName.toUpperCase()}`
     };
+    startDemo();
     setUser(matched);
     setProfile(matched);
-    setIsDemo(true);
   };
 
   const logout = async () => {
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
     }
+    // Salir de la demostración devuelve la capa de datos al modo real; sin
+    // credenciales `exitDemoMode()` no hace nada y el mock sigue sirviendo.
+    stopDemo();
     setUser(null);
     setProfile(null);
   };

@@ -1,12 +1,18 @@
-import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { supabase } from './supabaseClient';
+import { isDemoActive } from './demoMode';
 
 /**
- * Modo demo: no hay credenciales de Supabase, se sirve el mock en memoria.
- * OJO: es lo ÚNICO que activa el mock. Un error de consulta NUNCA cae al mock
- * (antes sí lo hacía, y por eso un cambio de esquema se manifestaba como
- * cifras falsas en vez de como un fallo visible).
+ * Modo demo: o no hay credenciales, o el usuario entró a la demostración desde
+ * la portada. En ambos casos se sirve el mock en memoria y NINGUNA petición
+ * llega a la base.
+ *
+ * OJO: son las dos ÚNICAS cosas que activan el mock. Un error de consulta NUNCA
+ * cae al mock (antes sí lo hacía, y por eso un cambio de esquema se manifestaba
+ * como cifras falsas en vez de como un fallo visible).
+ *
+ * Es una FUNCIÓN, no una constante: el modo puede cambiar durante la sesión.
  */
-export const IS_DEMO = !isSupabaseConfigured || !supabase;
+export const IS_DEMO = isDemoActive;
 
 export class ServiceError extends Error {
   constructor(scope, cause) {
@@ -27,7 +33,7 @@ export class ServiceError extends Error {
  * @param {() => any} runDemo
  */
 export async function query(scope, runSupabase, runDemo) {
-  if (IS_DEMO) return runDemo();
+  if (IS_DEMO()) return runDemo();
 
   const { data, error } = await runSupabase(supabase);
   if (error) {
@@ -42,7 +48,7 @@ export async function query(scope, runSupabase, runDemo) {
 
 /** Igual que query(), pero para escrituras que devuelven una sola fila. */
 export async function mutate(scope, runSupabase, runDemo) {
-  if (IS_DEMO) return runDemo();
+  if (IS_DEMO()) return runDemo();
 
   const { data, error } = await runSupabase(supabase);
   if (error) {

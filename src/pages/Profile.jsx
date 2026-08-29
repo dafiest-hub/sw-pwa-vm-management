@@ -4,7 +4,6 @@ import { Cpu, LogOut, Mail, ShieldCheck, Sparkles, UserCircle } from 'lucide-rea
 import { useAuth } from '../context/AuthContext';
 import { useScopedMachines } from '../hooks/useScopedMachines';
 import { Badge, StatusPill } from '../components/ui/Primitives';
-import { IS_DEMO } from '../lib/dataAccess';
 import { formatDate, roleLabel } from '../lib/format';
 
 const ROLE_TONE = { admin: 'accent', technician: 'warn', viewer: 'neutral' };
@@ -76,7 +75,7 @@ export const Profile = () => {
             </dd>
             <dt className="text-content-muted">Acceso</dt>
             <dd className="text-content-secondary">
-              {IS_DEMO ? 'Cuenta de demostración' : 'Cuenta verificada'}
+              {isDemo ? 'Cuenta de demostración' : 'Cuenta verificada'}
             </dd>
             <dt className="text-content-muted">Alta</dt>
             <dd className="text-content-secondary">{formatDate(profile?.created_at)}</dd>

@@ -41,7 +41,7 @@ export async function createProduct(input) {
 
   const payload = toPayload(input);
 
-  if (IS_DEMO) {
+  if (IS_DEMO()) {
     if (sampleProducts.some((p) => p.sku === payload.sku))
       throw new Error(`Ya existe un producto con el SKU "${payload.sku}".`);
     const nuevo = { id: `p-${Date.now()}`, ...payload, created_at: new Date().toISOString() };

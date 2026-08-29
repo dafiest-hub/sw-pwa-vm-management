@@ -75,7 +75,7 @@ export async function getSalesWithPayments(filters = {}) {
 
   let incomes = [];
   if (txIds.length) {
-    if (IS_DEMO) {
+    if (IS_DEMO()) {
       incomes = sampleSaleIncomes.filter(
         (i) => txIds.includes(i.tx_id) && machineIds.includes(i.machine_id)
       );

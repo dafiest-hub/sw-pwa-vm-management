@@ -38,7 +38,7 @@ export async function getMachines(assignedIds = null) {
         : all;
     }
   );
-  return IS_DEMO ? machines : machines.map(normalizeStatus);
+  return IS_DEMO() ? machines : machines.map(normalizeStatus);
 }
 
 export async function getMachineTanks(machineId) {
@@ -69,7 +69,7 @@ export async function getMachineById(id) {
   );
   if (!machine) return null;
 
-  const normalized = IS_DEMO ? machine : normalizeStatus(machine);
+  const normalized = IS_DEMO() ? machine : normalizeStatus(machine);
   const tanks = await getMachineTanks(normalized.id);
   return { ...normalized, tanks };
 }
@@ -117,7 +117,7 @@ export async function saveMachineTankSettings(machineId, tanks, { deviceId } = {
   });
 
   let results;
-  if (IS_DEMO) {
+  if (IS_DEMO()) {
     results = tanks.map((t) => {
       const row = sampleTanks.find((x) => x.id === t.id);
       if (row) Object.assign(row, payloadFor(t));
@@ -165,7 +165,7 @@ export async function saveMachineTankSettings(machineId, tanks, { deviceId } = {
 export async function publishTankConfig(machineId, deviceId, tanks) {
   const at = new Date().toISOString();
 
-  if (IS_DEMO) return { status: 'demo', at };
+  if (IS_DEMO()) return { status: 'demo', at };
 
   const body = {
     device_id: deviceId,
@@ -230,7 +230,7 @@ export async function createMachine(machineData) {
     }
   );
 
-  if (!IS_DEMO && machine?.id) {
+  if (!IS_DEMO() && machine?.id) {
     const { error } = await supabase.from('machine_status').insert([
       {
         machine_id: machine.id,
