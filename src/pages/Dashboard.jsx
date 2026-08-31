@@ -173,6 +173,7 @@ export const Dashboard = () => {
           subtitle={`${formatLiters(finance?.totalLiters || 0, 1)} surtidos`}
           icon={TrendingUp}
           tone="ok"
+          to="/sales"
         />
         <StatCard
           title="Ventas concretadas"
@@ -184,6 +185,7 @@ export const Dashboard = () => {
           }
           icon={Receipt}
           tone={failRate > 5 ? 'warn' : 'accent'}
+          to="/sales"
         />
         <StatCard
           title="Efectivo por recolectar"
@@ -191,6 +193,7 @@ export const Dashboard = () => {
           subtitle="acumulado en los monederos"
           icon={Banknote}
           tone={pendingCash > 2000 ? 'warn' : 'accent'}
+          to="/machines"
         />
         <StatCard
           title="Alertas pendientes"
@@ -198,6 +201,7 @@ export const Dashboard = () => {
           subtitle={alerts.length ? 'requieren atención' : 'sin incidencias abiertas'}
           icon={alerts.length ? ShieldAlert : CheckCircle2}
           tone={alerts.length ? 'danger' : 'ok'}
+          to="/alerts"
         />
       </div>
 
@@ -218,9 +222,22 @@ export const Dashboard = () => {
             {consumptionChart.length > 0 && (
               <div className="card p-4 h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={consumptionChart} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                  <BarChart data={consumptionChart} margin={{ top: 8, right: 8, left: -6, bottom: 0 }}>
                     <XAxis dataKey="name" stroke={chart.axis} fontSize={10} tickLine={false} />
-                    <YAxis stroke={chart.axis} fontSize={10} tickLine={false} />
+                    <YAxis
+                      stroke={chart.axis}
+                      fontSize={10}
+                      tickLine={false}
+                      label={{
+                        value: 'Litros',
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: 14,
+                        fill: chart.axis,
+                        fontSize: 10,
+                        style: { textAnchor: 'middle' },
+                      }}
+                    />
                     <Tooltip
                       cursor={{ fill: chart.grid, opacity: 0.4 }}
                       contentStyle={tooltipStyle(chart)}
@@ -308,10 +325,15 @@ export const Dashboard = () => {
         {/* Columna derecha */}
         <div className="space-y-6">
           <section className="card p-5 space-y-4">
-            <h3 className="font-bold text-content text-base flex items-center gap-2">
-              <Banknote className="w-5 h-5 text-emerald-400" />
-              Ingresos por medio de pago
-            </h3>
+            <div>
+              <h3 className="font-bold text-content text-base flex items-center gap-2">
+                <Banknote className="w-5 h-5 text-emerald-400" />
+                Ingresos por medio de pago
+              </h3>
+              <p className="text-[11px] text-content-muted mt-0.5 ml-7">
+                Toda la red, sumada en el periodo seleccionado
+              </p>
+            </div>
             {paymentData.length ? (
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
