@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, RefreshCw, RotateCcw, Save, Wand2 } from 'lucide-react';
+import { AlertTriangle, RefreshCw, RotateCcw, Save, Wand2, WifiOff } from 'lucide-react';
 import { saveMachineTankSettings, validateTankSettings } from '../../services/machineService';
 import { useToast } from '../ui/Toast';
 import { Badge } from '../ui/Primitives';
-import { formatLiters, formatMoney } from '../../lib/format';
+import { Modal } from '../ui/Modal';
+import { formatLiters, formatMoney, formatRelative, machineStatusLabel } from '../../lib/format';
 
 const num = (v) => (v === '' || v === null || v === undefined ? '' : String(v));
 
@@ -21,6 +22,13 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
   const [saving, setSaving] = useState(false);
   const [bulkPrice, setBulkPrice] = useState('');
   const [bulkMin, setBulkMin] = useState('');
+  const [confirmingOffline, setConfirmingOffline] = useState(false);
+
+  // `machines.status` lo escribe el consumidor MQTT con la telemetría, así que
+  // es un dato con retraso: no sirve para BLOQUEAR el guardado (los valores son
+  // válidos y el downlink ya es best-effort), pero sí para avisar de que lo más
+  // probable es que la configuración quede pendiente de sincronizar.
+  const offline = machine?.status && machine.status !== 'online';
 
   useEffect(() => {
     setRows(
@@ -68,8 +76,18 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
   const revert = () =>
     setRows((prev) => prev.map((r) => ({ ...r, price_per_liter: r._price0, low_threshold_liters: r._min0 })));
 
+  const requestSave = () => {
+    if (problems.length) return;
+    if (offline) {
+      setConfirmingOffline(true);
+      return;
+    }
+    save();
+  };
+
   const save = async () => {
     if (problems.length) return;
+    setConfirmingOffline(false);
     setSaving(true);
     try {
       const result = await saveMachineTankSettings(machine.id, rows, { deviceId: machine.device_id });
@@ -221,7 +239,7 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
           </button>
           <button
             type="button"
-            onClick={save}
+            onClick={requestSave}
             disabled={saving || !dirty.length || problems.length > 0}
             className="btn-primary"
           >
@@ -230,6 +248,46 @@ export const TankSettingsEditor = ({ machine, tanks, onSaved }) => {
           </button>
         </div>
       </div>
+
+      <Modal
+        open={confirmingOffline}
+        onClose={() => setConfirmingOffline(false)}
+        size="sm"
+        icon={WifiOff}
+        title="La máquina no está en línea"
+        subtitle={`${machine?.name || ''} · ${machineStatusLabel(machine?.status)}`}
+        footer={
+          <>
+            <button type="button" onClick={() => setConfirmingOffline(false)} className="btn-secondary flex-1">
+              Cancelar
+            </button>
+            <button type="button" onClick={save} className="btn-primary flex-1">
+              Guardar de todas formas
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-2 text-xs text-content-secondary">
+          <p>
+            El último estado recibido de la máquina es{' '}
+            <strong>{machineStatusLabel(machine?.status)}</strong>
+            {machine?.machine_status?.updated_at
+              ? ` (telemetría de ${formatRelative(machine.machine_status.updated_at)})`
+              : ''}
+            .
+          </p>
+          <p>
+            Los precios y niveles mínimos <strong>sí quedarán guardados</strong>, pero es probable
+            que no se puedan enviar al equipo ahora mismo: en ese caso la máquina quedará
+            <strong> pendiente de sincronizar</strong> y seguirá cobrando los precios anteriores
+            hasta que se reintente el envío.
+          </p>
+          <p className="text-content-muted">
+            El estado lo publica la propia máquina con su telemetría, así que puede estar
+            desactualizado: si sabes que está encendida, puedes continuar.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 };
