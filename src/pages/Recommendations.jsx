@@ -29,6 +29,31 @@ const dias = (v) => `${Number(v ?? 0).toFixed(1)} d`;
 
 const ScoreCell = (valor) => <Badge tone={tonoScore(valor)}>{n2(valor)}</Badge>;
 
+/**
+ * Los `avisos` del motor son de dos clases: unos le dicen algo al técnico y
+ * otros son diagnósticos del propio cálculo (ninguna regla activa, temperatura
+ * ausente, máquina sin tanques). Aquí sólo se traduce la primera clase; los
+ * diagnósticos se quedan en `.doc/HFIS_RECOMENDACIONES.md`, que es su sitio.
+ *
+ * Se reescriben en vez de mostrarse tal cual por dos razones: el motor los
+ * emite sin acentos y en el vocabulario del sistema, y sus cadenas se comparan
+ * como texto exacto contra el Python en `scripts/hfis-selfcheck.mjs`, así que
+ * corregirlas allí rompería la verificación.
+ */
+const PISTAS_CAIDA = [
+  [
+    /alertas de bomba o seguridad/,
+    'Hubo alertas de bomba o de seguridad justo antes de perder contacto: la avería apunta al equipo, conviene ir.',
+  ],
+  [
+    /sin alertas previas/,
+    'Se desconectó sin ninguna alerta previa: revisa el saldo de la SIM antes de enviar a alguien.',
+  ],
+];
+
+const pistaDeCaida = (r) =>
+  PISTAS_CAIDA.find(([patron]) => (r.avisos || []).some((a) => patron.test(a)))?.[1] || null;
+
 /** Reglas que dispararon en un dominio, de la más fuerte a la más débil. */
 const Reglas = ({ titulo, reglas }) => {
   if (!reglas?.length) return null;
@@ -158,13 +183,12 @@ export const Recommendations = () => {
 
   const detalle = (r) => (
     <div className="space-y-4 pt-1">
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
           ['Inventario', r.score_inv],
           ['Seguridad', r.score_seg],
           ['Mantenimiento', r.score_mant],
           ['Conectividad', r.score_con],
-          ['Maestro', r.prioridad_fis],
         ].map(([etiqueta, valor]) => (
           <div key={etiqueta} className="rounded-xl border border-line-subtle bg-surface-sunken/60 p-2">
             <p className="text-[10px] uppercase tracking-wider text-content-muted font-bold">{etiqueta}</p>
@@ -173,14 +197,22 @@ export const Recommendations = () => {
         ))}
       </div>
 
-      {/* El caso que más desconcierta: una máquina «tranquila» en primer lugar. */}
-      {r.score_con > r.prioridad_fis && (
-        <p className="text-[11px] text-amber-200/90 leading-relaxed">
-          La prioridad ({n2(r.prioridad)}) no sale del Maestro ({n2(r.prioridad_fis)}) sino de la
-          conectividad ({n2(r.score_con)}): se toma la mayor de las dos, porque no saber qué pasa en
-          una máquina no puede rebajar su urgencia. Los otros tres valores son la última foto que
-          llegó, no el estado de ahora.
-        </p>
+      {/* Una máquina sin reportar sube al principio aunque sus cifras se vean
+          tranquilas: son la última foto que llegó, no el estado de ahora. Es lo
+          que más desconcierta de la lista, así que se explica en la fila. */}
+      {r.datos_rancios && (
+        <div className="rounded-xl border border-status-warn/30 bg-status-warn/10 p-3 space-y-1">
+          <p className="text-[11px] font-bold text-amber-200">
+            Sin reportar desde hace {dias(r.dias_sin_contacto)}
+          </p>
+          <p className="text-[11px] text-amber-200/90 leading-relaxed">
+            Las cifras de arriba son la última información que envió, no su estado de ahora. Sube al
+            principio de la lista precisamente porque no se sabe qué está pasando en ella.
+          </p>
+          {pistaDeCaida(r) && (
+            <p className="text-[11px] text-amber-200/90 leading-relaxed">{pistaDeCaida(r)}</p>
+          )}
+        </div>
       )}
 
       {r.scores_inv_tanques?.length > 0 && (
@@ -206,18 +238,8 @@ export const Recommendations = () => {
         <Reglas titulo="Seguridad" reglas={r.explicacion?.seguridad} />
         <Reglas titulo="Mantenimiento" reglas={r.explicacion?.mantenimiento} />
         <Reglas titulo="Conectividad" reglas={r.explicacion?.conectividad} />
-        <Reglas titulo="Maestro" reglas={r.explicacion?.maestro} />
+        <Reglas titulo="Decisión final" reglas={r.explicacion?.maestro} />
       </div>
-
-      {r.avisos?.length > 0 && (
-        <ul className="space-y-1">
-          {r.avisos.map((a, i) => (
-            <li key={i} className="text-[11px] text-slate-400 leading-snug">
-              · {a}
-            </li>
-          ))}
-        </ul>
-      )}
 
       {r.machine_id && (
         <Link
@@ -244,18 +266,14 @@ export const Recommendations = () => {
         </div>
       </div>
 
-      <Notice tone="warn" title="Atiende de arriba hacia abajo">
-        Con ocho tanques por máquina basta uno en mal estado para que la etiqueta salga «Crítica», así
-        que en una red real casi todas lo estarán. La etiqueta describe el estado; <strong>el orden es
-        la recomendación</strong>. Dos máquinas con menos de 3 puntos de diferencia están empatadas:
-        esa distancia es ruido del cálculo, no información.
+      <Notice tone="info" title="Atiende de arriba hacia abajo">
+        El orden es la recomendación. Dos máquinas con menos de 3 puntos de diferencia tienen la
+        misma urgencia: atiende primero la que te quede más cerca.
       </Notice>
 
       {isDemo && (
         <Notice tone="info" title="Datos de demostración">
-          El juego de datos de ejemplo está congelado en el pasado, así que el cálculo se ancla a su
-          última telemetría en vez de a la hora actual. Con datos reales el instante de referencia es
-          el de ahora.
+          Las máquinas y las cifras de esta pantalla son de ejemplo.
         </Notice>
       )}
 
@@ -303,9 +321,7 @@ export const Recommendations = () => {
       />
 
       <p className="text-[11px] text-content-muted leading-relaxed">
-        El sistema todavía no está validado con datos de operación reales: es una recomendación para
-        ordenar la ruta, no una orden de trabajo. Pulsa una fila para ver qué reglas la pusieron en
-        esa posición.
+        Pulsa una fila para ver por qué esa máquina está en esa posición.
       </p>
     </div>
   );
