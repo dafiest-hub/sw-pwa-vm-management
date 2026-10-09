@@ -1,0 +1,500 @@
+{
+  "nombre": "FIS_Maestro",
+  "tipo": "mamdani",
+  "operadores": {
+    "and": "min",
+    "or": "max",
+    "implicacion": "min",
+    "agregacion": "max",
+    "defuzz": "centroid"
+  },
+  "entradas": [
+    {
+      "nombre": "Score_Inv",
+      "rango": [
+        0.0,
+        100.0
+      ],
+      "mfs": [
+        {
+          "nombre": "Bajo",
+          "tipo": "trapmf",
+          "params": [
+            0.0,
+            0.0,
+            20.0,
+            40.0
+          ]
+        },
+        {
+          "nombre": "Medio",
+          "tipo": "trimf",
+          "params": [
+            30.0,
+            50.0,
+            70.0
+          ]
+        },
+        {
+          "nombre": "Alto",
+          "tipo": "trimf",
+          "params": [
+            60.0,
+            75.0,
+            90.0
+          ]
+        },
+        {
+          "nombre": "Critico",
+          "tipo": "trapmf",
+          "params": [
+            80.0,
+            92.0,
+            100.0,
+            100.0
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Score_Seg",
+      "rango": [
+        0.0,
+        100.0
+      ],
+      "mfs": [
+        {
+          "nombre": "Bajo",
+          "tipo": "trapmf",
+          "params": [
+            0.0,
+            0.0,
+            20.0,
+            40.0
+          ]
+        },
+        {
+          "nombre": "Medio",
+          "tipo": "trimf",
+          "params": [
+            30.0,
+            50.0,
+            70.0
+          ]
+        },
+        {
+          "nombre": "Alto",
+          "tipo": "trimf",
+          "params": [
+            60.0,
+            75.0,
+            90.0
+          ]
+        },
+        {
+          "nombre": "Critico",
+          "tipo": "trapmf",
+          "params": [
+            80.0,
+            92.0,
+            100.0,
+            100.0
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Score_Mant",
+      "rango": [
+        0.0,
+        100.0
+      ],
+      "mfs": [
+        {
+          "nombre": "Bajo",
+          "tipo": "trapmf",
+          "params": [
+            0.0,
+            0.0,
+            20.0,
+            40.0
+          ]
+        },
+        {
+          "nombre": "Medio",
+          "tipo": "trimf",
+          "params": [
+            30.0,
+            50.0,
+            70.0
+          ]
+        },
+        {
+          "nombre": "Alto",
+          "tipo": "trimf",
+          "params": [
+            60.0,
+            75.0,
+            90.0
+          ]
+        },
+        {
+          "nombre": "Critico",
+          "tipo": "trapmf",
+          "params": [
+            80.0,
+            92.0,
+            100.0,
+            100.0
+          ]
+        }
+      ]
+    }
+  ],
+  "salida": {
+    "nombre": "Prioridad",
+    "rango": [
+      0.0,
+      100.0
+    ],
+    "mfs": [
+      {
+        "nombre": "Baja",
+        "tipo": "trapmf",
+        "params": [
+          0.0,
+          0.0,
+          15.0,
+          30.0
+        ]
+      },
+      {
+        "nombre": "Media",
+        "tipo": "trimf",
+        "params": [
+          20.0,
+          40.0,
+          60.0
+        ]
+      },
+      {
+        "nombre": "Alta",
+        "tipo": "trimf",
+        "params": [
+          50.0,
+          70.0,
+          85.0
+        ]
+      },
+      {
+        "nombre": "Critica",
+        "tipo": "trapmf",
+        "params": [
+          78.0,
+          92.0,
+          100.0,
+          100.0
+        ]
+      }
+    ]
+  },
+  "reglas": [
+    {
+      "antecedentes": [
+        0,
+        4,
+        0
+      ],
+      "consecuente": 4,
+      "peso": 1.0,
+      "conexion": 1,
+      "glosa": "A1 Seguridad critica"
+    },
+    {
+      "antecedentes": [
+        4,
+        0,
+        0
+      ],
+      "consecuente": 4,
+      "peso": 0.94,
+      "conexion": 1,
+      "glosa": "A2 Inventario critico"
+    },
+    {
+      "antecedentes": [
+        0,
+        0,
+        4
+      ],
+      "consecuente": 4,
+      "peso": 0.88,
+      "conexion": 1,
+      "glosa": "A3 Mantenimiento critico"
+    },
+    {
+      "antecedentes": [
+        3,
+        3,
+        0
+      ],
+      "consecuente": 4,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "B1 Inventario alto + seguridad alta"
+    },
+    {
+      "antecedentes": [
+        3,
+        0,
+        3
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "B2 Inventario alto + mantenimiento alto"
+    },
+    {
+      "antecedentes": [
+        0,
+        3,
+        3
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "B3 Seguridad alta + mantenimiento alto"
+    },
+    {
+      "antecedentes": [
+        3,
+        2,
+        2
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "B4 Un alto y dos medios (inventario)"
+    },
+    {
+      "antecedentes": [
+        2,
+        3,
+        2
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "B5 Un alto y dos medios (seguridad)"
+    },
+    {
+      "antecedentes": [
+        2,
+        2,
+        3
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "B6 Un alto y dos medios (mantenimiento)"
+    },
+    {
+      "antecedentes": [
+        2,
+        2,
+        2
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "C1 Todo medio"
+    },
+    {
+      "antecedentes": [
+        3,
+        1,
+        2
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "C2 Alto + medio + bajo"
+    },
+    {
+      "antecedentes": [
+        2,
+        3,
+        1
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "C3 Alto + medio + bajo"
+    },
+    {
+      "antecedentes": [
+        1,
+        3,
+        2
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "C4 Alto + medio + bajo"
+    },
+    {
+      "antecedentes": [
+        2,
+        1,
+        3
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "C5 Alto + medio + bajo"
+    },
+    {
+      "antecedentes": [
+        1,
+        2,
+        3
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "C6 Alto + medio + bajo"
+    },
+    {
+      "antecedentes": [
+        1,
+        2,
+        2
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "C7 Dos medios"
+    },
+    {
+      "antecedentes": [
+        2,
+        1,
+        2
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "C8 Dos medios"
+    },
+    {
+      "antecedentes": [
+        2,
+        2,
+        1
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "C9 Dos medios"
+    },
+    {
+      "antecedentes": [
+        1,
+        1,
+        1
+      ],
+      "consecuente": 1,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "D1 Todo bajo"
+    },
+    {
+      "antecedentes": [
+        1,
+        2,
+        1
+      ],
+      "consecuente": 1,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "D2 Un medio aislado"
+    },
+    {
+      "antecedentes": [
+        1,
+        1,
+        2
+      ],
+      "consecuente": 1,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "D3 Un medio aislado"
+    },
+    {
+      "antecedentes": [
+        1,
+        3,
+        1
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "E1 Solo seguridad alta"
+    },
+    {
+      "antecedentes": [
+        3,
+        1,
+        1
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "E2 Solo inventario alto"
+    },
+    {
+      "antecedentes": [
+        1,
+        1,
+        3
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "E3 Solo mantenimiento alto (doc: Media-Alta)"
+    },
+    {
+      "antecedentes": [
+        3,
+        1,
+        3
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "E4 Inventario y mantenimiento altos"
+    },
+    {
+      "antecedentes": [
+        3,
+        2,
+        1
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "E5 Inventario alto + seguridad media (especifica)"
+    },
+    {
+      "antecedentes": [
+        2,
+        1,
+        1
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "E6 Solo inventario medio (especifica)"
+    }
+  ]
+}

@@ -11,6 +11,24 @@ La propuesta técnica completa y el diseño arquitectónico de la PWA se encuent
 
 ---
 
+## 🧠 Ruta de atención (sistema experto difuso)
+
+La pantalla **Ruta de atención** (`/recomendaciones`, para administradores y
+técnicos) aplica un sistema experto difuso jerárquico a las máquinas asignadas
+al usuario y devuelve **en qué orden visitarlas**, combinando inventario,
+seguridad, mantenimiento y conectividad. Cada fila se puede abrir para ver los
+cuatro sub-scores, las reglas que dispararon y los avisos: la recomendación se
+explica, no se impone.
+
+Lo importante: **la salida es el orden, no la etiqueta.** Con ocho tanques por
+máquina basta uno en mal estado para que salga «Crítica», así que en una red
+real casi todas lo estarán.
+
+El motor corre en el navegador y está verificado contra el original en Python
+con `npm run hfis:check`. Los detalles están en `.doc/HFIS_RECOMENDACIONES.md`.
+
+---
+
 ## 🛠️ Tecnologías y Librerías
 
 - **Framework**: React 18 + Vite
@@ -30,6 +48,14 @@ npm install
 
 # 2. Iniciar servidor de desarrollo Vite
 npm run dev
+```
+
+Otros comandos:
+
+```bash
+npm run build       # Build de producción a dist/
+npm run preview     # Sirve el build localmente
+npm run hfis:check  # Comprueba el motor difuso contra el Python de la tesis
 ```
 
 Abra `http://localhost:5173` en su navegador.

@@ -1,0 +1,383 @@
+{
+  "nombre": "FIS_Seguridad",
+  "tipo": "mamdani",
+  "operadores": {
+    "and": "min",
+    "or": "max",
+    "implicacion": "min",
+    "agregacion": "max",
+    "defuzz": "centroid"
+  },
+  "entradas": [
+    {
+      "nombre": "Severidad",
+      "rango": [
+        0.0,
+        10.0
+      ],
+      "mfs": [
+        {
+          "nombre": "Ninguna",
+          "tipo": "trapmf",
+          "params": [
+            0.0,
+            0.0,
+            0.5,
+            1.5
+          ]
+        },
+        {
+          "nombre": "Leve",
+          "tipo": "trimf",
+          "params": [
+            1.0,
+            3.0,
+            5.0
+          ]
+        },
+        {
+          "nombre": "Grave",
+          "tipo": "trimf",
+          "params": [
+            4.0,
+            6.5,
+            8.0
+          ]
+        },
+        {
+          "nombre": "Critica",
+          "tipo": "trapmf",
+          "params": [
+            7.0,
+            9.0,
+            10.0,
+            10.0
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "TRecoleccion",
+      "rango": [
+        0.0,
+        21.0
+      ],
+      "mfs": [
+        {
+          "nombre": "Reciente",
+          "tipo": "trapmf",
+          "params": [
+            0.0,
+            0.0,
+            2.0,
+            5.0
+          ]
+        },
+        {
+          "nombre": "Normal",
+          "tipo": "trimf",
+          "params": [
+            3.0,
+            8.0,
+            14.0
+          ]
+        },
+        {
+          "nombre": "Atrasada",
+          "tipo": "trapmf",
+          "params": [
+            10.0,
+            16.0,
+            21.0,
+            21.0
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Efectivo",
+      "rango": [
+        0.0,
+        100.0
+      ],
+      "mfs": [
+        {
+          "nombre": "Bajo",
+          "tipo": "trapmf",
+          "params": [
+            0.0,
+            0.0,
+            20.0,
+            40.0
+          ]
+        },
+        {
+          "nombre": "Medio",
+          "tipo": "trimf",
+          "params": [
+            30.0,
+            55.0,
+            80.0
+          ]
+        },
+        {
+          "nombre": "Alto",
+          "tipo": "trapmf",
+          "params": [
+            70.0,
+            85.0,
+            100.0,
+            100.0
+          ]
+        }
+      ]
+    }
+  ],
+  "salida": {
+    "nombre": "Score_Seg",
+    "rango": [
+      0.0,
+      100.0
+    ],
+    "mfs": [
+      {
+        "nombre": "Bajo",
+        "tipo": "trapmf",
+        "params": [
+          0.0,
+          0.0,
+          15.0,
+          30.0
+        ]
+      },
+      {
+        "nombre": "Medio",
+        "tipo": "trimf",
+        "params": [
+          20.0,
+          45.0,
+          70.0
+        ]
+      },
+      {
+        "nombre": "Alto",
+        "tipo": "trimf",
+        "params": [
+          55.0,
+          75.0,
+          90.0
+        ]
+      },
+      {
+        "nombre": "Critico",
+        "tipo": "trapmf",
+        "params": [
+          80.0,
+          92.0,
+          100.0,
+          100.0
+        ]
+      }
+    ]
+  },
+  "reglas": [
+    {
+      "antecedentes": [
+        4,
+        0,
+        0
+      ],
+      "consecuente": 4,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Evento de seguridad critico (tilt)"
+    },
+    {
+      "antecedentes": [
+        3,
+        0,
+        3
+      ],
+      "consecuente": 4,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Evento grave con mucho efectivo dentro"
+    },
+    {
+      "antecedentes": [
+        3,
+        0,
+        2
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Evento grave, efectivo medio"
+    },
+    {
+      "antecedentes": [
+        3,
+        0,
+        1
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Evento grave, poco efectivo"
+    },
+    {
+      "antecedentes": [
+        2,
+        3,
+        3
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Leve + recoleccion atrasada + caja llena"
+    },
+    {
+      "antecedentes": [
+        2,
+        3,
+        2
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Leve + recoleccion atrasada"
+    },
+    {
+      "antecedentes": [
+        2,
+        3,
+        1
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Leve + atrasada, poco efectivo"
+    },
+    {
+      "antecedentes": [
+        2,
+        2,
+        3
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Leve con caja llena"
+    },
+    {
+      "antecedentes": [
+        2,
+        2,
+        2
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Leve, situacion normal"
+    },
+    {
+      "antecedentes": [
+        2,
+        1,
+        0
+      ],
+      "consecuente": 1,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Leve recien recolectada"
+    },
+    {
+      "antecedentes": [
+        1,
+        3,
+        3
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Sin eventos pero caja llena y atrasada"
+    },
+    {
+      "antecedentes": [
+        1,
+        3,
+        2
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Sin eventos, recoleccion atrasada"
+    },
+    {
+      "antecedentes": [
+        1,
+        3,
+        1
+      ],
+      "consecuente": 1,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Sin eventos, atrasada pero sin efectivo"
+    },
+    {
+      "antecedentes": [
+        1,
+        2,
+        3
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Sin eventos pero caja llena"
+    },
+    {
+      "antecedentes": [
+        1,
+        2,
+        2
+      ],
+      "consecuente": 1,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Operacion normal"
+    },
+    {
+      "antecedentes": [
+        1,
+        1,
+        0
+      ],
+      "consecuente": 1,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Sin eventos, recien recolectada"
+    },
+    {
+      "antecedentes": [
+        2,
+        2,
+        1
+      ],
+      "consecuente": 1,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "[+] Evento leve sin efectivo relevante"
+    },
+    {
+      "antecedentes": [
+        1,
+        2,
+        1
+      ],
+      "consecuente": 1,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "[+] Todo tranquilo"
+    }
+  ]
+}

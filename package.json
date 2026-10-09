@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "icons": "node scripts/build-icons.mjs"
+    "icons": "node scripts/build-icons.mjs",
+    "hfis:check": "node scripts/hfis-selfcheck.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",

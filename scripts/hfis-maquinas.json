@@ -1,0 +1,254 @@
+[
+  {
+    "id": "VM042",
+    "tanques": [
+      {
+        "tank_number": 1,
+        "nivel": 60,
+        "demanda": 45,
+        "dias_stockout": 12,
+        "dmax": 50.0,
+        "producto": ""
+      },
+      {
+        "tank_number": 2,
+        "nivel": 25,
+        "demanda": 20,
+        "dias_stockout": 10,
+        "dmax": 50.0,
+        "producto": ""
+      }
+    ],
+    "seguridad": {
+      "severidad": 8.5,
+      "t_recoleccion": 12,
+      "efectivo": 90
+    },
+    "mantenimiento": {
+      "salud": 0.2,
+      "temp": 24,
+      "t_intervencion": 30
+    },
+    "conectividad": {
+      "dias_sin_contacto": 0.01,
+      "valor_diario": 180.0,
+      "valor_ref": 300.0,
+      "estado_declarado": "online",
+      "alertas_antes_de_caer": false
+    },
+    "dias_desde_visita": 9,
+    "nombre": "",
+    "machine_id": "",
+    "meta": {}
+  },
+  {
+    "id": "VM043",
+    "tanques": [
+      {
+        "tank_number": 1,
+        "nivel": 10,
+        "demanda": 40,
+        "dias_stockout": 1,
+        "dmax": 50.0,
+        "producto": ""
+      },
+      {
+        "tank_number": 2,
+        "nivel": 70,
+        "demanda": 18,
+        "dias_stockout": 12,
+        "dmax": 50.0,
+        "producto": ""
+      }
+    ],
+    "seguridad": {
+      "severidad": 0.5,
+      "t_recoleccion": 6,
+      "efectivo": 45
+    },
+    "mantenimiento": {
+      "salud": 0.25,
+      "temp": 22,
+      "t_intervencion": 25
+    },
+    "conectividad": {
+      "dias_sin_contacto": 0.01,
+      "valor_diario": 160.0,
+      "valor_ref": 300.0,
+      "estado_declarado": "online",
+      "alertas_antes_de_caer": false
+    },
+    "dias_desde_visita": 4,
+    "nombre": "",
+    "machine_id": "",
+    "meta": {}
+  },
+  {
+    "id": "VM056",
+    "tanques": [
+      {
+        "tank_number": 1,
+        "nivel": 55,
+        "demanda": 40,
+        "dias_stockout": 9,
+        "dmax": 50.0,
+        "producto": ""
+      },
+      {
+        "tank_number": 2,
+        "nivel": 50,
+        "demanda": 15,
+        "dias_stockout": 11,
+        "dmax": 50.0,
+        "producto": ""
+      }
+    ],
+    "seguridad": {
+      "severidad": 1.0,
+      "t_recoleccion": 7,
+      "efectivo": 50
+    },
+    "mantenimiento": {
+      "salud": 0.55,
+      "temp": 45,
+      "t_intervencion": 75
+    },
+    "conectividad": {
+      "dias_sin_contacto": 0.01,
+      "valor_diario": 140.0,
+      "valor_ref": 300.0,
+      "estado_declarado": "online",
+      "alertas_antes_de_caer": false
+    },
+    "dias_desde_visita": 6,
+    "nombre": "",
+    "machine_id": "",
+    "meta": {}
+  },
+  {
+    "id": "VM057",
+    "tanques": [
+      {
+        "tank_number": 1,
+        "nivel": 45,
+        "demanda": 22,
+        "dias_stockout": 7,
+        "dmax": 50.0,
+        "producto": ""
+      },
+      {
+        "tank_number": 2,
+        "nivel": 50,
+        "demanda": 24,
+        "dias_stockout": 6,
+        "dmax": 50.0,
+        "producto": ""
+      }
+    ],
+    "seguridad": {
+      "severidad": 3.0,
+      "t_recoleccion": 12,
+      "efectivo": 55
+    },
+    "mantenimiento": {
+      "salud": 0.5,
+      "temp": 30,
+      "t_intervencion": 45
+    },
+    "conectividad": {
+      "dias_sin_contacto": 0.01,
+      "valor_diario": 120.0,
+      "valor_ref": 300.0,
+      "estado_declarado": "online",
+      "alertas_antes_de_caer": false
+    },
+    "dias_desde_visita": 8,
+    "nombre": "",
+    "machine_id": "",
+    "meta": {}
+  },
+  {
+    "id": "VM061",
+    "tanques": [
+      {
+        "tank_number": 1,
+        "nivel": 85,
+        "demanda": 20,
+        "dias_stockout": 20,
+        "dmax": 50.0,
+        "producto": ""
+      },
+      {
+        "tank_number": 2,
+        "nivel": 90,
+        "demanda": 18,
+        "dias_stockout": 25,
+        "dmax": 50.0,
+        "producto": ""
+      }
+    ],
+    "seguridad": {
+      "severidad": 0.0,
+      "t_recoleccion": 2,
+      "efectivo": 15
+    },
+    "mantenimiento": {
+      "salud": 0.05,
+      "temp": 20,
+      "t_intervencion": 5
+    },
+    "conectividad": {
+      "dias_sin_contacto": 0.01,
+      "valor_diario": 90.0,
+      "valor_ref": 300.0,
+      "estado_declarado": "online",
+      "alertas_antes_de_caer": false
+    },
+    "dias_desde_visita": 2,
+    "nombre": "",
+    "machine_id": "",
+    "meta": {}
+  },
+  {
+    "id": "VM070",
+    "tanques": [
+      {
+        "tank_number": 1,
+        "nivel": 92,
+        "demanda": 12,
+        "dias_stockout": 28,
+        "dmax": 50.0,
+        "producto": ""
+      },
+      {
+        "tank_number": 2,
+        "nivel": 88,
+        "demanda": 10,
+        "dias_stockout": 30,
+        "dmax": 50.0,
+        "producto": ""
+      }
+    ],
+    "seguridad": {
+      "severidad": 0.0,
+      "t_recoleccion": 3,
+      "efectivo": 20
+    },
+    "mantenimiento": {
+      "salud": 0.03,
+      "temp": 21,
+      "t_intervencion": 8
+    },
+    "conectividad": {
+      "dias_sin_contacto": 6.0,
+      "valor_diario": 210.0,
+      "valor_ref": 300.0,
+      "estado_declarado": "offline",
+      "alertas_antes_de_caer": false
+    },
+    "dias_desde_visita": 6,
+    "nombre": "",
+    "machine_id": "",
+    "meta": {}
+  }
+]

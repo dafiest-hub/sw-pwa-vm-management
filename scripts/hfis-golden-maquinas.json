@@ -1,0 +1,320 @@
+[
+  {
+    "id": "VM070",
+    "score_inv": 10.0,
+    "score_seg": 12.41,
+    "score_mant": 10.0,
+    "score_con": 95.0,
+    "prioridad": 95.0,
+    "etiqueta": "Critica",
+    "dias_desde_visita": 6,
+    "scores_inv_tanques": [
+      10.0,
+      10.0
+    ],
+    "tanque_critico": 1,
+    "carga_inventario": 10.0,
+    "prioridad_fis": 11.41,
+    "dias_sin_contacto": 6.0,
+    "datos_rancios": true,
+    "explicacion": {
+      "seguridad": [
+        [
+          16,
+          0.6666666666666666,
+          "Sin eventos, recien recolectada"
+        ]
+      ],
+      "mantenimiento": [
+        [
+          7,
+          0.9230769230769231,
+          "Sana y recien intervenida"
+        ]
+      ],
+      "maestro": [
+        [
+          19,
+          1.0,
+          "D1 Todo bajo"
+        ]
+      ],
+      "conectividad": [
+        [
+          10,
+          0.4,
+          "Incomunicada: maxima perdida y cero visibilidad"
+        ],
+        [
+          9,
+          0.2,
+          "Incomunicada y perdiendo venta a diario"
+        ]
+      ]
+    },
+    "avisos": [
+      "Sin contacto desde hace 6.0 d: inventario, seguridad y mantenimiento son la ultima foto conocida, no el estado actual.",
+      "Desconexion sin alertas previas: verificar el saldo de la SIM antes de enviar a alguien."
+    ]
+  },
+  {
+    "id": "VM042",
+    "score_inv": 55.0,
+    "score_seg": 92.29,
+    "score_mant": 30.0,
+    "score_con": 10.0,
+    "prioridad": 92.23,
+    "etiqueta": "Critica",
+    "dias_desde_visita": 9,
+    "scores_inv_tanques": [
+      48.75,
+      55.0
+    ],
+    "tanque_critico": 2,
+    "carga_inventario": 51.88,
+    "prioridad_fis": 92.23,
+    "dias_sin_contacto": 0.01,
+    "datos_rancios": false,
+    "explicacion": {
+      "seguridad": [
+        [
+          1,
+          0.75,
+          "Evento de seguridad critico (tilt)"
+        ]
+      ],
+      "mantenimiento": [
+        [
+          6,
+          0.6,
+          "Operacion normal"
+        ]
+      ],
+      "maestro": [
+        [
+          1,
+          1.0,
+          "A1 Seguridad critica"
+        ]
+      ],
+      "conectividad": [
+        [
+          1,
+          1.0,
+          "Reportando con normalidad"
+        ]
+      ]
+    },
+    "avisos": []
+  },
+  {
+    "id": "VM043",
+    "score_inv": 95.0,
+    "score_seg": 12.63,
+    "score_mant": 37.35,
+    "score_con": 10.0,
+    "prioridad": 92.09,
+    "etiqueta": "Critica",
+    "dias_desde_visita": 4,
+    "scores_inv_tanques": [
+      95.0,
+      35.68
+    ],
+    "tanque_critico": 1,
+    "carga_inventario": 65.34,
+    "prioridad_fis": 92.09,
+    "dias_sin_contacto": 0.01,
+    "datos_rancios": false,
+    "explicacion": {
+      "seguridad": [
+        [
+          15,
+          0.6,
+          "Operacion normal"
+        ]
+      ],
+      "mantenimiento": [
+        [
+          6,
+          0.4,
+          "Operacion normal"
+        ],
+        [
+          3,
+          0.16666666666666663,
+          "Degradacion moderada"
+        ]
+      ],
+      "maestro": [
+        [
+          2,
+          0.94,
+          "A2 Inventario critico"
+        ]
+      ],
+      "conectividad": [
+        [
+          1,
+          1.0,
+          "Reportando con normalidad"
+        ]
+      ]
+    },
+    "avisos": []
+  },
+  {
+    "id": "VM056",
+    "score_inv": 55.0,
+    "score_seg": 12.96,
+    "score_mant": 75.0,
+    "score_con": 10.0,
+    "prioridad": 68.25,
+    "etiqueta": "Alta",
+    "dias_desde_visita": 6,
+    "scores_inv_tanques": [
+      55.0,
+      38.33
+    ],
+    "tanque_critico": 1,
+    "carga_inventario": 46.67,
+    "prioridad_fis": 68.25,
+    "dias_sin_contacto": 0.01,
+    "datos_rancios": false,
+    "explicacion": {
+      "seguridad": [
+        [
+          15,
+          0.5,
+          "Operacion normal"
+        ]
+      ],
+      "mantenimiento": [
+        [
+          2,
+          0.75,
+          "Degradada y sin intervencion hace mucho"
+        ]
+      ],
+      "maestro": [
+        [
+          14,
+          0.75,
+          "C5 Alto + medio + bajo"
+        ]
+      ],
+      "conectividad": [
+        [
+          1,
+          1.0,
+          "Reportando con normalidad"
+        ]
+      ]
+    },
+    "avisos": []
+  },
+  {
+    "id": "VM057",
+    "score_inv": 55.0,
+    "score_seg": 45.0,
+    "score_mant": 55.0,
+    "score_con": 10.0,
+    "prioridad": 40.0,
+    "etiqueta": "Media",
+    "dias_desde_visita": 8,
+    "scores_inv_tanques": [
+      55.0,
+      55.0
+    ],
+    "tanque_critico": 2,
+    "carga_inventario": 55.0,
+    "prioridad_fis": 40.0,
+    "dias_sin_contacto": 0.01,
+    "datos_rancios": false,
+    "explicacion": {
+      "seguridad": [
+        [
+          6,
+          0.3333333333333333,
+          "Leve + recoleccion atrasada"
+        ],
+        [
+          9,
+          0.3333333333333333,
+          "Leve, situacion normal"
+        ]
+      ],
+      "mantenimiento": [
+        [
+          3,
+          0.8333333333333334,
+          "Degradacion moderada"
+        ]
+      ],
+      "maestro": [
+        [
+          10,
+          0.7499999999999997,
+          "C1 Todo medio"
+        ]
+      ],
+      "conectividad": [
+        [
+          1,
+          1.0,
+          "Reportando con normalidad"
+        ]
+      ]
+    },
+    "avisos": []
+  },
+  {
+    "id": "VM061",
+    "score_inv": 30.0,
+    "score_seg": 11.41,
+    "score_mant": 10.0,
+    "score_con": 10.0,
+    "prioridad": 12.96,
+    "etiqueta": "Baja",
+    "dias_desde_visita": 2,
+    "scores_inv_tanques": [
+      30.0,
+      24.67
+    ],
+    "tanque_critico": 1,
+    "carga_inventario": 27.33,
+    "prioridad_fis": 12.96,
+    "dias_sin_contacto": 0.01,
+    "datos_rancios": false,
+    "explicacion": {
+      "seguridad": [
+        [
+          16,
+          1.0,
+          "Sin eventos, recien recolectada"
+        ]
+      ],
+      "mantenimiento": [
+        [
+          7,
+          1.0,
+          "Sana y recien intervenida"
+        ]
+      ],
+      "maestro": [
+        [
+          19,
+          0.5,
+          "D1 Todo bajo"
+        ]
+      ],
+      "conectividad": [
+        [
+          1,
+          1.0,
+          "Reportando con normalidad"
+        ]
+      ]
+    },
+    "avisos": []
+  }
+]

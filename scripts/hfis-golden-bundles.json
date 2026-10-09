@@ -1,0 +1,209 @@
+[
+  {
+    "id": "VM100",
+    "score_inv": 95.0,
+    "score_seg": 73.33,
+    "score_mant": 30.0,
+    "score_con": 10.0,
+    "prioridad": 92.09,
+    "etiqueta": "Critica",
+    "dias_desde_visita": 17.0,
+    "scores_inv_tanques": [
+      95.0,
+      10.0
+    ],
+    "tanque_critico": 1,
+    "carga_inventario": 52.5,
+    "prioridad_fis": 92.09,
+    "dias_sin_contacto": 0.01,
+    "datos_rancios": false,
+    "explicacion": {
+      "seguridad": [
+        [
+          11,
+          1.0,
+          "Sin eventos pero caja llena y atrasada"
+        ]
+      ],
+      "mantenimiento": [
+        [
+          6,
+          0.44,
+          "Operacion normal"
+        ]
+      ],
+      "maestro": [
+        [
+          2,
+          0.94,
+          "A2 Inventario critico"
+        ]
+      ],
+      "conectividad": [
+        [
+          1,
+          1.0,
+          "Reportando con normalidad"
+        ]
+      ]
+    },
+    "avisos": []
+  },
+  {
+    "id": "VM101",
+    "score_inv": 26.84,
+    "score_seg": 13.3,
+    "score_mant": 95.0,
+    "score_con": 10.0,
+    "prioridad": 91.95,
+    "etiqueta": "Critica",
+    "dias_desde_visita": 5.0,
+    "scores_inv_tanques": [
+      21.43,
+      26.84
+    ],
+    "tanque_critico": 2,
+    "carga_inventario": 24.14,
+    "prioridad_fis": 91.95,
+    "dias_sin_contacto": 0.01,
+    "datos_rancios": false,
+    "explicacion": {
+      "seguridad": [
+        [
+          18,
+          0.4,
+          "[+] Todo tranquilo"
+        ]
+      ],
+      "mantenimiento": [
+        [
+          1,
+          0.9600000000000013,
+          "Salud de dispensacion critica"
+        ]
+      ],
+      "maestro": [
+        [
+          3,
+          0.88,
+          "A3 Mantenimiento critico"
+        ]
+      ],
+      "conectividad": [
+        [
+          1,
+          1.0,
+          "Reportando con normalidad"
+        ]
+      ]
+    },
+    "avisos": []
+  },
+  {
+    "id": "VM103",
+    "score_inv": 11.11,
+    "score_seg": 13.54,
+    "score_mant": 10.0,
+    "score_con": 75.0,
+    "prioridad": 75.0,
+    "etiqueta": "Critica",
+    "dias_desde_visita": 4.0,
+    "scores_inv_tanques": [
+      11.11,
+      10.0
+    ],
+    "tanque_critico": 1,
+    "carga_inventario": 10.56,
+    "prioridad_fis": 11.41,
+    "dias_sin_contacto": 5.0,
+    "datos_rancios": true,
+    "explicacion": {
+      "seguridad": [
+        [
+          16,
+          0.3333333333333333,
+          "Sin eventos, recien recolectada"
+        ],
+        [
+          18,
+          0.2,
+          "[+] Todo tranquilo"
+        ]
+      ],
+      "mantenimiento": [
+        [
+          7,
+          1.0,
+          "Sana y recien intervenida"
+        ]
+      ],
+      "maestro": [
+        [
+          19,
+          1.0,
+          "D1 Todo bajo"
+        ]
+      ],
+      "conectividad": [
+        [
+          8,
+          0.3333333333333333,
+          "Incomunicada hace dias: revisar SIM y equipo"
+        ]
+      ]
+    },
+    "avisos": [
+      "Sin contacto desde hace 5.0 d: inventario, seguridad y mantenimiento son la ultima foto conocida, no el estado actual.",
+      "Desconexion sin alertas previas: verificar el saldo de la SIM antes de enviar a alguien."
+    ]
+  },
+  {
+    "id": "VM102",
+    "score_inv": 10.0,
+    "score_seg": 11.41,
+    "score_mant": 10.0,
+    "score_con": 10.0,
+    "prioridad": 11.41,
+    "etiqueta": "Baja",
+    "dias_desde_visita": 2.0,
+    "scores_inv_tanques": [
+      10.0
+    ],
+    "tanque_critico": 1,
+    "carga_inventario": 10.0,
+    "prioridad_fis": 11.41,
+    "dias_sin_contacto": 0.01,
+    "datos_rancios": false,
+    "explicacion": {
+      "seguridad": [
+        [
+          16,
+          1.0,
+          "Sin eventos, recien recolectada"
+        ]
+      ],
+      "mantenimiento": [
+        [
+          7,
+          1.0,
+          "Sana y recien intervenida"
+        ]
+      ],
+      "maestro": [
+        [
+          19,
+          1.0,
+          "D1 Todo bajo"
+        ]
+      ],
+      "conectividad": [
+        [
+          1,
+          1.0,
+          "Reportando con normalidad"
+        ]
+      ]
+    },
+    "avisos": []
+  }
+]

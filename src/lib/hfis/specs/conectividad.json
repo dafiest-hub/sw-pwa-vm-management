@@ -1,0 +1,244 @@
+{
+  "nombre": "FIS_Conectividad",
+  "tipo": "sugeno",
+  "operadores": {
+    "and": "min",
+    "or": "max",
+    "implicacion": "prod",
+    "agregacion": "sum",
+    "defuzz": "wtaver"
+  },
+  "entradas": [
+    {
+      "nombre": "DiasSinContacto",
+      "rango": [
+        0.0,
+        14.0
+      ],
+      "mfs": [
+        {
+          "nombre": "Enlinea",
+          "tipo": "trapmf",
+          "params": [
+            0.0,
+            0.0,
+            0.17,
+            0.5
+          ]
+        },
+        {
+          "nombre": "Intermitente",
+          "tipo": "trimf",
+          "params": [
+            0.25,
+            1.0,
+            2.0
+          ]
+        },
+        {
+          "nombre": "Caida",
+          "tipo": "trimf",
+          "params": [
+            1.5,
+            3.0,
+            5.0
+          ]
+        },
+        {
+          "nombre": "Prolongada",
+          "tipo": "trapmf",
+          "params": [
+            4.0,
+            7.0,
+            14.0,
+            14.0
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "ValorDiario",
+      "rango": [
+        0.0,
+        300.0
+      ],
+      "mfs": [
+        {
+          "nombre": "Bajo",
+          "tipo": "trapmf",
+          "params": [
+            0.0,
+            0.0,
+            45.0,
+            120.0
+          ]
+        },
+        {
+          "nombre": "Medio",
+          "tipo": "trimf",
+          "params": [
+            75.0,
+            150.0,
+            225.0
+          ]
+        },
+        {
+          "nombre": "Alto",
+          "tipo": "trapmf",
+          "params": [
+            180.0,
+            255.0,
+            300.0,
+            300.0
+          ]
+        }
+      ]
+    }
+  ],
+  "salida": {
+    "nombre": "Score_Con",
+    "rango": [
+      0.0,
+      100.0
+    ],
+    "mfs": [
+      {
+        "nombre": "MuyBajo",
+        "tipo": "constant",
+        "params": [
+          10.0
+        ]
+      },
+      {
+        "nombre": "Bajo",
+        "tipo": "constant",
+        "params": [
+          30.0
+        ]
+      },
+      {
+        "nombre": "Medio",
+        "tipo": "constant",
+        "params": [
+          55.0
+        ]
+      },
+      {
+        "nombre": "Alto",
+        "tipo": "constant",
+        "params": [
+          75.0
+        ]
+      },
+      {
+        "nombre": "Critico",
+        "tipo": "constant",
+        "params": [
+          95.0
+        ]
+      }
+    ]
+  },
+  "reglas": [
+    {
+      "antecedentes": [
+        1,
+        0
+      ],
+      "consecuente": 1,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Reportando con normalidad"
+    },
+    {
+      "antecedentes": [
+        2,
+        1
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Cortes intermitentes en maquina de poca venta"
+    },
+    {
+      "antecedentes": [
+        2,
+        2
+      ],
+      "consecuente": 2,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Cortes intermitentes; aun se recibe telemetria"
+    },
+    {
+      "antecedentes": [
+        2,
+        3
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Cortes en maquina de alta venta: vigilar"
+    },
+    {
+      "antecedentes": [
+        3,
+        1
+      ],
+      "consecuente": 3,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Caida confirmada, poca venta en riesgo"
+    },
+    {
+      "antecedentes": [
+        3,
+        2
+      ],
+      "consecuente": 4,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Caida confirmada: se pierde venta y visibilidad"
+    },
+    {
+      "antecedentes": [
+        3,
+        3
+      ],
+      "consecuente": 4,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Caida en maquina de alta venta"
+    },
+    {
+      "antecedentes": [
+        4,
+        1
+      ],
+      "consecuente": 4,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Incomunicada hace dias: revisar SIM y equipo"
+    },
+    {
+      "antecedentes": [
+        4,
+        2
+      ],
+      "consecuente": 5,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Incomunicada y perdiendo venta a diario"
+    },
+    {
+      "antecedentes": [
+        4,
+        3
+      ],
+      "consecuente": 5,
+      "peso": 1,
+      "conexion": 1,
+      "glosa": "Incomunicada: maxima perdida y cero visibilidad"
+    }
+  ]
+}

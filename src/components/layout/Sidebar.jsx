@@ -8,6 +8,7 @@ import {
   DollarSign, 
   Wrench, 
   AlertTriangle, 
+  ListOrdered, 
   Users, 
   UserCircle,
   ChevronRight,
@@ -47,6 +48,12 @@ export const Sidebar = ({ isOpen, onClose }) => {
       name: 'Operaciones & Recargas',
       path: '/operations',
       icon: Wrench,
+      roles: ['admin', 'technician']
+    },
+    {
+      name: 'Ruta de atención',
+      path: '/recomendaciones',
+      icon: ListOrdered,
       roles: ['admin', 'technician']
     },
     {

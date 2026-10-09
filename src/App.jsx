@@ -12,6 +12,7 @@ import { Products } from "./pages/Products";
 import { Sales } from "./pages/Sales";
 import { Operations } from "./pages/Operations";
 import { Alerts } from "./pages/Alerts";
+import { Recommendations } from "./pages/Recommendations";
 import { Users } from "./pages/Users";
 import { Profile } from "./pages/Profile";
 
@@ -66,6 +67,7 @@ export function App() {
               <Route path="sales" element={<Sales />} />
               <Route path="operations" element={<Operations />} />
               <Route path="alerts" element={<Alerts />} />
+              <Route path="recomendaciones" element={<Recommendations />} />
               <Route path="users" element={<Users />} />
               <Route path="profile" element={<Profile />} />
             </Route>

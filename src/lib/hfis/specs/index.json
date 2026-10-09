@@ -1,0 +1,10 @@
+{
+  "fis": {
+    "inventario": "inventario.json",
+    "seguridad": "seguridad.json",
+    "mantenimiento": "mantenimiento.json",
+    "conectividad": "conectividad.json",
+    "maestro": "maestro.json"
+  },
+  "nota": "Consumido por el motor difuso de la Edge Function."
+}
